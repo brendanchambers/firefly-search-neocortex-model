@@ -1,0 +1,30 @@
+
+
+
+
+# this experiment is to find a good way to measure asynchrony
+        # the corrcoef distribution isn't working very well
+           # going to try scaling of the corrcoef distribution with size of population subsample
+network 1: lognorm_sigma = 0.1
+network 2: lognorm_sigma = 1  TODO also need to check = 2
+
+structuring the files this way to take care of multiple cpus in a simple way (todo should look into this in more detail)
+
+p_ei and p_ie are left free for the fireflies - are we seeing different needs for coupling between E & I for narrow vs heavy tailed distributions?
+
+
+
+
+instructions:
+
+1. configure_firefly
+        set the config_prefix to save this setup so you can find it later
+        keep a copy of the configuration file with the final results, for record keeping
+
+2. run_firefly
+        set the config_filestring to load the configuration you just made
+        be sure to set the objective function in the section running the firefly algorithm
+
+3. plot_firefly
+        set the results_filestring to load the results you just computed
+        you will probably need to change the colormap lims because they're currently set by hand
