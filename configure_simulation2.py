@@ -28,7 +28,7 @@ VT = -50.4 * mV
 DeltaT = 2 * mV
 Vcut = VT + 5 * DeltaT
 
-w_input = 3 * nS
+#w_input = 3 * nS # leave this free (important for regulating state - brunel 2000)
 we = 1 * nS  # excitatory synaptic weight (this gets multiplied by a logrand so make sure we get the scaling right)
 wi = 10 * nS  # inhibitory synaptic weight
 
@@ -76,7 +76,7 @@ networkconfig_dict = {"N_input":N_input,"N_e":N_e,"N":N,"N_i":N_i,
           "duration":str(duration), "input_duration":str(input_duration),  # make these into strings so they
           "input_rate":str(input_rate),"initial_Vm":str(initial_Vm),           #   can be serialized
           "C":str(C),"gL":str(gL),"taum":str(taum),"EL":str(EL),"VT":str(VT),"DeltaT":str(DeltaT),
-          "Vcut":str(Vcut),"w_input":str(w_input),"we":str(we),"wi":str(wi),
+          "Vcut":str(Vcut),"we":str(we),"wi":str(wi), # "w_input":str(w_input), # now actively optimizing w_input
 
            "p_connect_input":p_connect_input,"p_connect_ee":p_connect_ee,
              #"p_connect_ei":p_connect_ei,p_connect_ie":p_connect_ie,

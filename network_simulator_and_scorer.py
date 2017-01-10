@@ -59,8 +59,8 @@ class NetworkHelper:
         parsed = network_config['Vcut'].split(' ')
         self.Vcut = eval(parsed[0] + ' * ' + parsed[1])
 
-        parsed = network_config['w_input'].split(' ')
-        self.w_input = eval(parsed[0] + ' * ' + parsed[1])
+        #parsed = network_config['w_input'].split(' ')
+        #self.w_input = eval(parsed[0] + ' * ' + parsed[1])
         parsed = network_config['we'].split(' ')
         self.we = eval(parsed[0] + ' * ' + parsed[1])
         parsed = network_config['wi'].split(' ')
@@ -101,6 +101,7 @@ class NetworkHelper:
     def  simulateActivity(self, input_args, verboseplot=False):
         p_ei = input_args[0]
         p_ie = input_args[1]
+        w_input = input_args[2] * nS
         ########### define the neurons and connections
         logrand_mu = log(1) - 0.5*(self.logrand_sigma**2) # this establishes mean(W) = 1, regardless of sigma
 
@@ -126,7 +127,7 @@ class NetworkHelper:
         taue = self.taue
         taui = self.taui
 
-        w_input = self.w_input
+        #w_input = self.w_input
         we = self.we
         wi = self.wi
 

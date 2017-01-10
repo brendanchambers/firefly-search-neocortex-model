@@ -9,20 +9,20 @@ from pprint import pprint
 config_prefix = 'check asyn measure 12-19-2016' # for making the filestring
 
 verbose = 'test clean python architecture, asynchrony hacky' # optionally provide a general description of the current endeavor
-PARAMS = ['p_ei','p_ie'] # ,'lognorm_sigma'] # name for easier printing
+PARAMS = ['p_ei','p_ie','w_input'] # ,'lognorm_sigma'] # name for easier printing
 OBJECTIVES = ['asynchrony','stable duration'] # names for easier printing & reference
                     # (for now the second obj dimension is not necessary)
 
-N_gen = 50
+N_gen = 5
 N_bugs = 10
 N_params = len(PARAMS)
 N_objectives = len(OBJECTIVES)
 
 # range for [lognorm_sigma_manifold, p_ie]
-MEANS = [0.2, 0.2] # ,-1] # for each param
-STDS = [0.1, 0.1] # ,3]
-MAXES = [0.4, 0.4] # , 5]
-MINS = [0, 0] # , -10]  # sigma must be > 0
+MEANS = [0.2, 0.2, 3] # ,-1] # for each param
+STDS = [0.1, 0.1, 1] # ,3]
+MAXES = [0.4, 0.4, 10] # , 5]
+MINS = [0, 0, 0.01] # , -10]  # sigma must be > 0
 
 characteristic_scales = np.zeros((N_params,)) # note this gets saved as a list (for serialization)
                                                 #  todo fix code to unpack it

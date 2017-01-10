@@ -1,31 +1,36 @@
 {
   "MAXES": [
     0.4, 
-    0.4
+    0.4, 
+    10
   ], 
   "MEANS": [
     0.2, 
-    0.2
+    0.2, 
+    3
   ], 
   "MINS": [
     0, 
-    0
+    0, 
+    0.01
   ], 
   "N_bugs": 10, 
-  "N_gen": 50, 
+  "N_gen": 5, 
   "N_objectives": 2, 
-  "N_params": 2, 
+  "N_params": 3, 
   "OBJECTIVES": [
     "asynchrony", 
     "stable duration"
   ], 
   "PARAMS": [
     "p_ei", 
-    "p_ie"
+    "p_ie", 
+    "w_input"
   ], 
   "STDS": [
     0.1, 
-    0.1
+    0.1, 
+    1
   ], 
   "absorption": 0.6, 
   "alpha": 0.05, 
@@ -33,7 +38,8 @@
   "beta": 5, 
   "characteristic_scales": [
     0.2, 
-    0.2
+    0.2, 
+    2.0
   ], 
   "config_prefix": "check asyn measure 12-19-2016", 
   "verbose": "test clean python architecture, asynchrony hacky"
