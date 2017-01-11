@@ -79,7 +79,7 @@ def run_firefly1():
         # todo  handle meta-heuristics
         beta *= annealing_constant
         for i_fly in range(0, N_bugs): # todo better to enumerate the firebugs directly
-            scoreVectors[i_fly,:] = network_helper.simulateActivity(population[:,i_fly])
+            scoreVectors[i_fly,:] = network_helper.simulateActivity(population[:,i_fly],verboseplot=False)
             #scoreVectors[i_fly, 1] = rosenbrock_obj(population[:, i_fly]) # temp just use the same obj for both
 
 

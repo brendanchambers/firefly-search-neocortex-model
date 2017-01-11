@@ -165,12 +165,15 @@ for i_objective in range(0, N_objectives):
     paretoScores[i_objective] = np.reshape(scores,(N_bugs,N_gen)) # todo check if this reshaping is correct
 
     if verboseplot:
-        num_bins = 10
-        plt.figure
-        plt.hist(paretoScores[i_objective],num_bins,histtype='step')  # histogram(scores)
-        plt.ylabel('log count')
-        plt.yscale('log',nonposy='clip')
-        plt.show()
+        try:
+            num_bins = 10
+            plt.figure
+            plt.hist(paretoScores[i_objective],num_bins,histtype='step')  # histogram(scores)
+            plt.ylabel('log count')
+            plt.yscale('log',nonposy='clip')
+            plt.show()
+        except ValueError:
+            print "error plotting hist. possiblly illegal range on scores"
 
     minScore = np.nanmin(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])]) # make sure we're not looking at nans
     print "min score " + str(minScore)

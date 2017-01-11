@@ -142,21 +142,40 @@ class NetworkHelper:
         print type(b)
         '''
         #input_units = PoissonGroup(self.N_input, self.input_rate)
-        input_units = PoissonGroup(self.N_input, self.input_rate)
-        neurons = NeuronGroup(self.N, model=eqs, threshold='vm>Vcut',
-                              reset="vm=Vr; w+=b", refractory=1*ms, method='rk4')
+        #neurons = NeuronGroup(self.N, model=eqs, threshold='vm>Vcut',
+        #                      reset="vm=Vr; w+=b", refractory=1*ms, method='rk4')
+
+
+        duration = 50 * ms  # temp putting all this here, todo get from config file appropriately
+        t_res = defaultclock.dt # 0.1 * ms
+        input_mean = 1 # e-9 # scale from siemens to nS
+        input_sigma = 0.3333 # e-9 # scale from siemens to nS
+        num_steps = (duration / t_res) + 1
+        num_cells = self.N
+        cell_inputs = np.random.normal(input_mean, input_sigma, (num_steps, num_cells))
+        cell_inputs[num_steps-1,:] = 0 # make sure final entry is a zero
+        cell_inputs[:,self.N_e:] = 0 # set inhibitory inputs to zero
+        #plt.figure
+        #plt.imshow(cell_inputs, interpolation='nearest', aspect='auto')
+        #plt.show()
+        cell_inputs *= (w_input/nS) # scale by the input strength, which is being optimized as args[2]
+        #print cell_inputs[1:10,1:10]
+        g_input_timedArray = TimedArray(cell_inputs * nS, dt=defaultclock.dt)
+        neurons = NeuronGroup(self.N,   # todo provide input to E neurons only?
+                              model=eqs, threshold='vm>Vcut', reset="vm=Vr; w+=b",
+                              refractory=1 * ms, method='rk4')
 
         Pe = neurons[:self.N_e]  # excitatory subpopulation
         Pi = neurons[self.N_e:self.N]
 
-        Cinput = Synapses(input_units, Pe, on_pre='gE+=w_input')
+        #Cinput = Synapses(input_units, Pe, on_pre='gE+=w_input')
         Cee = Synapses(Pe, Pe, model='''alpha : 1''', on_pre='gE+=(alpha*we)')  # define the synapse groups
         Cei = Synapses(Pe, Pi, model='''alpha : 1''', on_pre='gE+=(alpha*we)')
         Cii = Synapses(Pi, Pi, model='''alpha : 1''', on_pre='gI+=(alpha*wi)')
         Cie = Synapses(Pi, Pe, model='''alpha : 1''', on_pre='gI+=(alpha*wi)')
 
         # note - we can also specify vectors Pre and Post, so that Pre(i) -> Post(i) ... e.g. Cee.connect(i=Pre, j=Post)
-        Cinput.connect(p=self.p_connect_input)
+        #Cinput.connect(p=self.p_connect_input)
         Cee.connect(p=self.p_connect_ee)  # p_connect_ee) # connect randomly  (additional argument we might want: condition='i!=j')
         #Cei.connect(p=self.p_connect_ei)
         Cii.connect(p=self.p_connect_ii)
@@ -193,13 +212,13 @@ class NetworkHelper:
         s_mon = SpikeMonitor(neurons)  # keep track of population firing
         P_patch = neurons[(self.N_e - 1):(self.N_e + 1)]  # random exc and inh cell #todo chose these randomly
         dt_patch = 0.1 * ms  # 1/sampling frequency  in ms
-        patch_monitor = StateMonitor(P_patch, variables=('vm', 'gE', 'gI', 'w'), record=True,
+        patch_monitor = StateMonitor(P_patch, variables=('vm', 'gE', 'gI', 'w', 'g_input'), record=True,
                                      dt=dt_patch)  # keep track of a few cells
-        inputRate_monitor = PopulationRateMonitor(input_units)
+        #inputRate_monitor = PopulationRateMonitor(input_units)
 
         ###### stimulation period
         #run(self.input_duration)
-        run(self.input_duration)
+        #run(self.input_duration)
 
         ######  non-stimulation period  % todo define some input connectivity
         # neurons.I = 0 * nA # current injection turned off
@@ -209,7 +228,7 @@ class NetworkHelper:
 
         # input_units = PoissonGroup(N_input, 0*Hz) # silence the inputs - this doesn't work
         # (# note - looks like the TimedArray Brian2 class has potential to be a better solution for dynamic inputs)
-        run(self.duration - self.input_duration)  # make everything go
+        run(self.duration) #  - self.input_duration)  # make everything go
 
         # device.build(directory='output', compile=True, run=True, debug=False) # for the c++ build (omitting during testing)
         # todo try to get this back in if we want it to run faster
@@ -243,8 +262,9 @@ class NetworkHelper:
             axarr[2].set_ylabel('gI')
             axarr[3].plot(tt, patch_monitor[0].w, 'ro')
             axarr[3].set_ylabel('adaptation w')
-            axarr[4].plot(tt, inputRate_monitor.smooth_rate(width=5 * ms) / Hz, 'k')
-            axarr[4].set_ylabel('input rate')
+            #axarr[4].plot(tt, inputRate_monitor.smooth_rate(width=5 * ms) / Hz, 'k')
+            axarr[4].plot(tt, patch_monitor[0].g_input,'k')
+            axarr[4].set_ylabel('g_input')
             plt.xlabel('time (ms)')
             plt.show()
 
@@ -260,8 +280,9 @@ class NetworkHelper:
             axarr[2].set_ylabel('gI')
             axarr[3].plot(tt, patch_monitor[1].w, 'ro')
             axarr[3].set_ylabel('adaptation w')
-            axarr[4].plot(tt, inputRate_monitor.smooth_rate(width=5 * ms) / Hz, 'k')
-            axarr[4].set_ylabel('input rate')
+            #axarr[4].plot(tt, inputRate_monitor.smooth_rate(width=5 * ms) / Hz, 'k')
+            axarr[4].plot(tt, patch_monitor[1].g_input, 'k')
+            axarr[4].set_ylabel('g_input')
             plt.xlabel('time (ms)')
             plt.show()
 
@@ -289,41 +310,31 @@ class NetworkHelper:
             binIdx = np.round((s_mon.t[i_spike] / ms) / binwidth)
             raster[cellIdx][binIdx] += 1   #
 
+        avgRates = np.nansum(raster,1) / (self.duration/ms / 1000) # avg rates in Hz during the trial (remove ms units and convert to s)
+        numActiveNeurons = np.sum(np.where(avgRates > 0.01,1,0))
+
         smoothSigma = 15  # ms
         sigmaBins = smoothSigma / binwidth # warning will this be a problem if it's not an integer? round if necessary
-        meanSmoothRate = filt.gaussian_filter1d(raster,sigma=smoothSigma,axis=1) # todo should smooth BEFORE rebinning
-        sumSmoothRate = np.sum(meanSmoothRate,0) # todo set this up relative to N_e
-
-        if verboseplot:
-            # check the processed raster
-            plt.figure
-            plt.imshow(raster,interpolation='nearest',aspect='auto')
-            plt.tight_layout()
-            plt.gray()
-            plt.title('how does the raster look before smoothing')
-            plt.show()
-
-            plt.figure
-            plt.imshow(meanSmoothRate, interpolation='nearest', aspect='auto')
-            plt.tight_layout()
-            plt.gray()
-            plt.title('how does the raster look after smoothing')
-            plt.show()
+        raster_smooth = filt.gaussian_filter1d(raster,sigma=smoothSigma,axis=1) # todo should smooth BEFORE rebinning
+        sumSmoothRate = np.sum(raster_smooth,0) # todo set this up relative to N_e
+        if numActiveNeurons > 0:
+            meanSmoothRate = (1./numActiveNeurons)*sumSmoothRate # note, does the division make f.p. roundoff worse?
+        else:
+            meanSmoothRate = np.zeros((numBins))
 
 
-        #########################     find the landmarks
-
-        IGNITION_THRESH = 5  # avg firing rate (Hz) among active cells -> to count as an ignition
-        QUENCH_THRESH = 5
-        PAROXYSM_THRESH = 40  # maximum allowed rate
+        IGNITION_THRESH = 0.001  # avg firing rate (Hz) among active cells -> to count as an ignition
+        QUENCH_THRESH = 0.001
+        PAROXYSM_THRESH = 0.06 # maximum allowed rate
+                    #   note these aren't normalized right with the smoothing kernel
 
         ignitionFrame = -1  # first onset
-        threshCrossIdxs = np.where(sumSmoothRate > IGNITION_THRESH)  # is where the correct function
+        threshCrossIdxs = np.where(meanSmoothRate > IGNITION_THRESH)  # is where the correct function
         if np.shape(threshCrossIdxs[0]) != (0,):
             ignitionFrame = threshCrossIdxs[0][0]  # first one only
 
         quenchFrame = -1  # first offset (todo restrict to the non-input receiving period)
-        th = sumSmoothRate > QUENCH_THRESH
+        th = meanSmoothRate > QUENCH_THRESH
         combined = th[:-1] & [th[1:] == False]  # this frame was TRUE, next frame is FALSE
         idxs = np.where(combined[0])
         if np.shape(idxs[0]) != (0,):
@@ -331,18 +342,12 @@ class NetworkHelper:
             quenchFrame = quenchIdxs[0] + 1  # get the FALSE frame
 
         paroxysmFrame = -1  # first onset
-        threshCrossIdxs = np.where(sumSmoothRate > PAROXYSM_THRESH)  # is where the correct function
+        threshCrossIdxs = np.where(meanSmoothRate > PAROXYSM_THRESH)  # is where the correct function
         if np.shape(threshCrossIdxs[0]) != (0,):
             paroxysmFrame = threshCrossIdxs[0][0]  # first one only
 
         if np.shape(threshCrossIdxs) != (1, 0):
             offsetFrame = threshCrossIdxs[0]
-
-        if verboseplot:
-            print "ignition frame: " + str(ignitionFrame)
-            print "quench frame: " + str(quenchFrame)
-            print "paroxysm frame: " + str(paroxysmFrame)
-
 
         ###########################     duration of first stable firing epoch
 
@@ -360,6 +365,36 @@ class NetworkHelper:
             stablePeriodEnd = -1
 
         stable_duration_score = (stablePeriodEnd - stablePeriodBegin) * binwidth
+        print stable_duration_score
+        print "above: stable duration score"
+
+        ########################## plotting for stable duration score
+        if verboseplot:
+            # check the processed raster
+            plt.figure
+            plt.imshow(raster,interpolation='nearest',aspect='auto')
+            plt.tight_layout()
+            plt.gray()
+            plt.title('how does the raster look before smoothing')
+            plt.show()
+
+            plt.figure
+            plt.imshow(raster_smooth, interpolation='nearest', aspect='auto')
+            plt.tight_layout()
+            plt.gray()
+            plt.title('how does the raster look after smoothing')
+            plt.show()
+
+            print "ignition frame: " + str(ignitionFrame)
+            print "quench frame: " + str(quenchFrame)
+            print "paroxysm frame: " + str(paroxysmFrame)
+
+            plt.figure
+            plt.plot(meanSmoothRate)
+            title('mean smooth rate')
+            plt.show()
+
+
 
         #####################  compute corr coeffs of rates  # todo do this better
 
@@ -373,9 +408,7 @@ class NetworkHelper:
 
             plt.figure()
             xx = arange(0,self.duration/ms + 0.01,binwidth) # add epsilon to get the last bin
-            print np.shape(xx)
-            print np.shape(np.sum(meanSmoothRate,0))
-            plt.plot(xx,np.sum(meanSmoothRate,0))
+            plt.plot(xx,np.sum(raster_smooth,0))
             plt.title('sum activity')
             plt.ylabel('(Hz) incorrect normalization? ') # todo superimpose mean  # todo add plot for slope
             plt.xlabel('time (ms)')
@@ -448,10 +481,18 @@ class NetworkHelper:
 
 
 
-        NUM_COMPONENTS = 2 # temp - asynchrony and null # todo read this in automatically
+        NUM_COMPONENTS = 1 # temp - asynchrony and null # todo need to read this in automatically in the constructor
         score_components = np.zeros((NUM_COMPONENTS,))
-        score_components[0] = asynchrony_score # asynchrony_score # it's named like this because the plan used to be, pareto front
-        score_components[1] = stable_duration_score # temp
+        #score_components[0] = asynchrony_score # asynchrony_score # it's named like this because the plan used to be, pareto front
+        #score_components[1] = stable_duration_score # temp
+
+        score_components[0] = stable_duration_score
+
+        if verboseplot:
+            print "asynchrony_score " + str(asynchrony_score)
+            print " stable duration score " + str(stable_duration_score)
+            print " w input " + str(w_input)
+
         return score_components
 
 

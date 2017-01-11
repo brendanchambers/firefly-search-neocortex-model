@@ -16,7 +16,7 @@
   "a": "4. nS", 
   "b": "80.5 pA", 
   "duration": "0.3 second", 
-  "eqs": "\ndvm/dt = ( -gL*(vm-EL) + gL*DeltaT*exp((vm-VT)/DeltaT) - gE*(vm-EE) - gI*(vm-EI) - w )/C : volt\ndgE/dt = -gE/taue : siemens\ndw/dt = (a*(vm - EL) - w)/tauw : amp\ndgI/dt = -gI/taui : siemens\n", 
+  "eqs": "\ndvm/dt = ( -gL*(vm-EL) + gL*DeltaT*exp((vm-VT)/DeltaT) - gE*(vm-EE) - g_input_timedArray(t,i)*(vm-EE) - gI*(vm-EI) - w )/C : volt\ndgE/dt = -gE/taue : siemens\ndw/dt = (a*(vm - EL) - w)/tauw : amp\ndgI/dt = -gI/taui : siemens\ng_input = g_input_timedArray(t,i) : siemens\n", 
   "gL": "30. nS", 
   "initial_Vm": "(-60 + 10 * (numpy.random.rand(1, self.N) - 0.5)) * mV", 
   "input_duration": "0.3 second", 

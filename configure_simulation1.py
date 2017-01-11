@@ -50,18 +50,21 @@ tauw, a, b, Vr, EE, EI, taue, taui = 144 * ms, 4 * nS, 0.0805 * nA, -70.6 * mV, 
 # tauw,a,b,Vr=144*ms,2*C/(144*ms),in_unit(0*nA,nA),-70.6*mV # Fast spiking
 
 ########### dynamics of the model ############
+# ok to get rid of this one fyi:
 eqs = """
-dvm/dt = ( -self.gL*(vm-self.EL) + self.gL*self.DeltaT*exp((vm-self.VT)/self.DeltaT) - gE*(vm-self.EE) - gI*(vm-self.EI) - w )/self.C : volt
+dvm/dt = ( -self.gL*(vm-self.EL) + self.gL*self.DeltaT*exp((vm-self.VT)/self.DeltaT) - gE*(vm-self.EE) - g_input*(vm-EE) - gI*(vm-self.EI) - w )/self.C : volt
 dgE/dt = -gE/self.taue : siemens
 dw/dt = (self.a*(vm - self.EL) - w)/self.tauw : amp
 dgI/dt = -gI/self.taui : siemens
+g_input = g_input_timedArray(t,i) : siemens
 """
 
 eqs = """
-dvm/dt = ( -gL*(vm-EL) + gL*DeltaT*exp((vm-VT)/DeltaT) - gE*(vm-EE) - gI*(vm-EI) - w )/C : volt
+dvm/dt = ( -gL*(vm-EL) + gL*DeltaT*exp((vm-VT)/DeltaT) - gE*(vm-EE) - g_input_timedArray(t,i)*(vm-EE) - gI*(vm-EI) - w )/C : volt
 dgE/dt = -gE/taue : siemens
 dw/dt = (a*(vm - EL) - w)/tauw : amp
 dgI/dt = -gI/taui : siemens
+g_input = g_input_timedArray(t,i) : siemens
 """
 
 print eqs
