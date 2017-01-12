@@ -308,12 +308,13 @@ class NetworkHelper:
         for i_spike in range(0,len(s_mon.i)):
             cellIdx = s_mon.i[i_spike]
             binIdx = np.round((s_mon.t[i_spike] / ms) / binwidth)
-            raster[cellIdx][binIdx] += 1   #
+            raster[cellIdx][binIdx] += 1.0  #
+        raster = raster * (1.0/(binwidth/1000.0)) # convert to Hz # todo this is still wonky
 
         avgRates = np.nansum(raster,1) / (self.duration/ms / 1000) # avg rates in Hz during the trial (remove ms units and convert to s)
         numActiveNeurons = np.sum(np.where(avgRates > 0.01,1,0))
 
-        smoothSigma = 15  # ms
+        smoothSigma = 3  # ms
         sigmaBins = smoothSigma / binwidth # warning will this be a problem if it's not an integer? round if necessary
         raster_smooth = filt.gaussian_filter1d(raster,sigma=smoothSigma,axis=1) # todo should smooth BEFORE rebinning
         sumSmoothRate = np.sum(raster_smooth,0) # todo set this up relative to N_e
@@ -322,10 +323,9 @@ class NetworkHelper:
         else:
             meanSmoothRate = np.zeros((numBins))
 
-
-        IGNITION_THRESH = 0.001  # avg firing rate (Hz) among active cells -> to count as an ignition
-        QUENCH_THRESH = 0.001
-        PAROXYSM_THRESH = 0.06 # maximum allowed rate
+        IGNITION_THRESH = 0.5  # avg firing rate (Hz) among active cells -> to count as an ignition
+        QUENCH_THRESH = 0.5
+        PAROXYSM_THRESH = 50 # maximum allowed rate
                     #   note these aren't normalized right with the smoothing kernel
 
         ignitionFrame = -1  # first onset
@@ -364,7 +364,14 @@ class NetworkHelper:
             stablePeriodBegin = -1 # else if network never ignited:
             stablePeriodEnd = -1
 
-        stable_duration_score = (stablePeriodEnd - stablePeriodBegin) * binwidth
+
+        totalSpiking = np.sum(meanSmoothRate[stablePeriodBegin:stablePeriodEnd]) # get sum over mean rate
+        stable_bins = (stablePeriodEnd - stablePeriodBegin)
+        maxPossibleSpiking = PAROXYSM_THRESH * stable_bins # get max possible
+        # subtract, and norm to length
+        rate_score = (maxPossibleSpiking - totalSpiking) / stable_bins
+
+        stable_duration_score = (stablePeriodEnd - stablePeriodBegin) * binwidth # e.g. stable duration
         print stable_duration_score
         print "above: stable duration score"
 
@@ -397,7 +404,7 @@ class NetworkHelper:
 
 
         #####################  compute corr coeffs of rates  # todo do this better
-
+        '''
         if stablePeriodBegin == -1:
             asynchrony_score = -1 # no meaningful definition for null trials
         else:
@@ -425,9 +432,10 @@ class NetworkHelper:
                 plt.hist(corrcoeffs[~np.isnan(corrcoeffs)], bins=40)
                 plt.show()
                 plt.title('distributon of correlation coefficients')  # todo add landmarks to plot
+        '''
 
  ######################    scaling with K      take multiple samples from the corrcoeffs # todo this, didn't really work, currently not using
-                '''
+        '''
         sample_sizes = [100, 300, 500, 750, 1000]
         num_repeats = 10
         samples = np.zeros((num_repeats,len(sample_sizes)))erlan
@@ -457,7 +465,7 @@ class NetworkHelper:
 
 
 ###### clean up memory
-            '''
+        '''
         raster = None
         meanSmoothRate = None
         sumSmoothRate = None
@@ -478,20 +486,19 @@ class NetworkHelper:
 
 ###########################      package it all up
 
-
-
-
-        NUM_COMPONENTS = 1 # temp - asynchrony and null # todo need to read this in automatically in the constructor
+        NUM_COMPONENTS = 2 # temp - asynchrony and null # todo need to read this in automatically in the constructor
         score_components = np.zeros((NUM_COMPONENTS,))
         #score_components[0] = asynchrony_score # asynchrony_score # it's named like this because the plan used to be, pareto front
         #score_components[1] = stable_duration_score # temp
 
         score_components[0] = stable_duration_score
+        score_components[1] = rate_score
 
         if verboseplot:
-            print "asynchrony_score " + str(asynchrony_score)
+            #print "asynchrony_score " + str(asynchrony_score)
             print " stable duration score " + str(stable_duration_score)
             print " w input " + str(w_input)
+            print "rate score " + str(rate_score)
 
         return score_components
 

@@ -2,6 +2,7 @@ import matplotlib as mpl
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import math
 import json
 from network_simulator_and_scorer import NetworkHelper
 
@@ -12,6 +13,7 @@ from network_simulator_and_scorer import NetworkHelper
 config_filestring = 'check asyn measure 12-19-2016 config.json'
 networkconfig_filestring = 'check asyn measure 12-19-2016 networkconfig 2.json'
 results_filestring = 'check asyn measure 12-19-2016 results 2.json'
+#results_filestring = 'testfile.json'
 
 verboseplot = True
 simulatewinner = True
@@ -22,6 +24,15 @@ results_file = open(results_filestring,'r')
 with results_file as data_file:
     fireflyHistory = json.load(data_file)
 results_file.close()
+
+N_bugs = np.shape(fireflyHistory)[1] # reflecting the new save format
+N_gen = np.shape(fireflyHistory)[0]
+#indexSwitch = [[dict() for i_bug in range(N_bugs)] for i_gen in range(N_gen)]  # hacky fix - needed the transpose of this for the new save-format (todo fix the plotting to reflect the new format so we can skip this step)
+indexSwitch = [[dict() for i_gen in range(N_gen)] for i_bug in range(N_bugs)]  # hacky fix - needed the transpose of this for the new save-format (todo fix the plotting to reflect the new format so we can skip this step)
+for i in range(N_gen):
+    for j in range(N_bugs):
+        indexSwitch[j][i] = fireflyHistory[i][j]
+fireflyHistory = indexSwitch
 
 config_file = open(config_filestring,'r')
 with config_file as data_file:
@@ -36,7 +47,7 @@ with networkconfig_file as data_file:
 networkconfig_file.close()
 
 N_bugs = np.shape(fireflyHistory)[0]
-N_gen = np.shape(fireflyHistory)[1]
+N_gen = np.shape(fireflyHistory)[1]  # todo this is going to be backwards
 N_objectives = np.shape(fireflyHistory[0][0]['score'])[0]
 print 'N_bugs: ' , N_bugs , ' N_gen: ' , N_gen, ' N_scores ' , N_objectives
 print 'lognormal sigma ' , networkconfig_data['logrand_sigma']
@@ -164,12 +175,15 @@ for i_objective in range(0, N_objectives):
     paretoScores[i_objective] = np.reshape(scores,(N_bugs,N_gen)) # todo check if this reshaping is correct
 
     if verboseplot:
-        num_bins = 10
-        plt.figure
-        plt.hist(paretoScores[i_objective],num_bins,histtype='step')  # histogram(scores)
-        plt.ylabel('log count')
-        plt.yscale('log',nonposy='clip')
-        plt.show()
+        try:
+            num_bins = 10
+            plt.figure
+            plt.hist(paretoScores[i_objective],num_bins,histtype='step')  # histogram(scores)
+            plt.ylabel('log count')
+            plt.yscale('log',nonposy='clip')
+            plt.show()
+        except ValueError:
+            print "error plotting hist. possiblly illegal range on scores"
 
     minScore = np.nanmin(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])]) # make sure we're not looking at nans
     print "min score " + str(minScore)

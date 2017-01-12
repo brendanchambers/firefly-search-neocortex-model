@@ -10,11 +10,11 @@ config_prefix = 'check asyn measure 12-19-2016' # for making the filestring
 
 verbose = 'test clean python architecture, asynchrony hacky' # optionally provide a general description of the current endeavor
 PARAMS = ['p_ei','p_ie','w_input'] # ,'lognorm_sigma'] # name for easier printing
-OBJECTIVES = ['stable duration'] # '['asynchrony','stable duration'] # names for easier printing & reference
+OBJECTIVES = ['stable duration','rate_score'] # '['asynchrony','stable duration'] # names for easier printing & reference
                     # (for now the second obj dimension is not necessary)
 
-N_gen = 150
-N_bugs = 20
+N_gen = 150  # working towards 100+
+N_bugs = 30
 N_params = len(PARAMS)
 N_objectives = len(OBJECTIVES)
 
@@ -26,6 +26,7 @@ MINS = [0, 0, 5] # , -10]  # sigma must be > 0
 
 characteristic_scales = np.zeros((N_params,)) # note this gets saved as a list (for serialization)
                                                 #  todo fix code to unpack it
+                                                        #  note I think I took care of this, double check
 for i_param in range(N_params):
     characteristic_scales[i_param] = 2*STDS[i_param]
 

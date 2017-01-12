@@ -14,12 +14,13 @@
     0, 
     5
   ], 
-  "N_bugs": 20, 
+  "N_bugs": 30, 
   "N_gen": 150, 
-  "N_objectives": 1, 
+  "N_objectives": 2, 
   "N_params": 3, 
   "OBJECTIVES": [
-    "stable duration"
+    "stable duration", 
+    "rate_score"
   ], 
   "PARAMS": [
     "p_ei", 

@@ -36,7 +36,6 @@ def run_firefly1():
     MINS = firefly_config['MINS']
 
     characteristic_scales = np.array(firefly_config['characteristic_scales']) # note this gets saved as a list (for serialization)
-    #print ('test json numpy conversion: ' + np.array_str(characteristic_scales)) # success, the order is preserved
 
     alpha = firefly_config['alpha'] # NOTE alpha gets scaled by char scale for each param in Firefly Dynamics function
     beta = firefly_config['beta']  # >4 yields chaotic firefly dynamics
@@ -58,16 +57,19 @@ def run_firefly1():
                 population[i_param,i_fly] = MINS[i_param]
             if population[i_param,i_fly] > MAXES[i_param]:
                 population[i_param,i_fly] = MAXES[i_param]
-
     print 'initial population: ', population
-    scoreVectors = np.zeros((N_bugs, N_objectives))
-    fireflyHistory = [[dict() for i_gen in range(N_gen)] for i_bug in range(N_bugs)]
 
-    print ' firefly history dimensions: ', np.shape(fireflyHistory)
+    scoreVectors = np.zeros((N_bugs, N_objectives))
     attractionTerms = np.zeros((N_bugs, N_params))
     noiseTerms = np.zeros((N_bugs, N_params))
 
-    network_helper = NetworkHelper(networkconfig_filestring)
+    oneGen = [dict() for i_bug in range(N_bugs)] # write this dictionary to the json results file after each generation
+    f_name = save_prefix + ' results 1.json'
+    resultsFile = open(f_name, 'w')
+    resultsFile.write("[") # for formatting a valid json object
+
+    network_helper = NetworkHelper(networkconfig_filestring) # this object does all the simulation work
+                                                            # todo would be nice to initialize inputs as a global static variable in here
 
     startTime = time.time()
 
@@ -82,15 +84,15 @@ def run_firefly1():
             scoreVectors[i_fly,:] = network_helper.simulateActivity(population[:,i_fly],verboseplot=False)
             #scoreVectors[i_fly, 1] = rosenbrock_obj(population[:, i_fly]) # temp just use the same obj for both
 
-
-        # todo pick off cullIdxs here (make a separate function to keep the abstraction clean
+        # NOTE could pick off bad fireflies at this point...but things seem to be working well enough so far without culling
 
         # keep track of progress for plotting etc
         for i_fly in range(0,N_bugs):
-            fireflyHistory[i_fly][i_gen] = {'noise':np.copy(noiseTerms[i_fly,:]).tolist(),'attraction':np.copy(attractionTerms[i_fly,:]).tolist(),
+            oneGen[i_fly] = {'noise':np.copy(noiseTerms[i_fly,:]).tolist(),'attraction':np.copy(attractionTerms[i_fly,:]).tolist(),
                                             'alpha':alpha,'beta':beta,'absorption':absorption,
-                                            'score':np.copy(scoreVectors[i_fly,:]).tolist(),'params':np.copy(population[:,i_fly]).tolist()}
-                            # todo could improve efficiency here...do we need to copy?
+                                            'score':np.copy(scoreVectors[i_fly,:]).tolist(),'params':np.copy(population[:,i_fly]).tolist(),
+                                            'gen':i_gen,'fly':i_fly}
+                                            # NOTE could maybe improve efficiency here...do we need to copy?
 
         # scale alpha and ?absorption?
         result = firefly_dynamics_rescaled(population, scoreVectors, alpha, beta, absorption, characteristic_scales)
@@ -107,16 +109,17 @@ def run_firefly1():
                 if population[i_param,i_fly] > MAXES[i_param]:
                     population[i_param,i_fly] = MAXES[i_param]
 
+        json.dump(oneGen, resultsFile, sort_keys=True, indent=2)
+        if i_gen < (N_gen - 1):
+            resultsFile.write(",")
+
         # todo keep track of the pareto front
 
     ############### save the results for plotting and post-hoc analysis
 
     print 'elapsed time for firefly alg: ', time.time() - startTime, ' seconds'
 
-    # save fireflyHistory as json formatted dictionary
-    saveName = save_prefix + ' results 1.json'
-    resultsFile = open(saveName,'w')
-    json.dump(fireflyHistory,resultsFile,sort_keys=True,indent=2)
+    resultsFile.write("]")
     resultsFile.close()
 
 run_firefly1()
