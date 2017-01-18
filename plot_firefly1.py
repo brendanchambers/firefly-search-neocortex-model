@@ -67,11 +67,12 @@ for i_obj in range(0,N_objectives):
     for i_gen in range(0,N_gen):
         for i_bug in range(0,N_bugs):
             allScores[i_bug, i_gen] = fireflyHistory[i_bug][i_gen]['score'][i_obj]  # don't need this later so it's ok to overwrite it
-    bestOverall = np.argmax(allScores[~np.isnan(allScores)])
+    bestOverall = np.nanargmax(allScores) # argmax thinks nans > inf  # todo why are there nans in here anyway?
     unraveledIdx = np.unravel_index(bestOverall,(N_bugs,N_gen))
     print 'best overall:', bestOverall,' score: ', allScores[unraveledIdx]
     bugIdxs[i_obj] = unraveledIdx[0]
     genIdxs[i_obj] = unraveledIdx[1] # keep these for simulation at the very end
+    #print "best overall match? " + str(allScores[bugIdxs[i_obj]][genIdxs[i_obj]]) # test unraveling  # ok it's working
     print 'winning params: ', fireflyHistory[ int(bugIdxs[i_obj]) ][ int(genIdxs[i_obj]) ]['params']
 
 

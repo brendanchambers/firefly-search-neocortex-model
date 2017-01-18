@@ -71,7 +71,7 @@ class NetworkHelper:
         self.p_connect_ee = network_config['p_connect_ee']
         #self.p_connect_ie = network_config['p_connect_ie']
         #self.p_connect_ei = network_config['p_connect_ei']
-        self.p_connect_ii = network_config['p_connect_ii']
+        #self.p_connect_ii = network_config['p_connect_ii']
 
         self.logrand_sigma = network_config['logrand_sigma']
         self.logrand_mu = network_config['logrand_mu']
@@ -101,7 +101,8 @@ class NetworkHelper:
     def  simulateActivity(self, input_args, verboseplot=False):
         p_ei = input_args[0]
         p_ie = input_args[1]
-        w_input = input_args[2] * nS
+        p_ii = input_args[2]
+        w_input = input_args[3] * nS
         ########### define the neurons and connections
         logrand_mu = log(1) - 0.5*(self.logrand_sigma**2) # this establishes mean(W) = 1, regardless of sigma
 
@@ -178,10 +179,11 @@ class NetworkHelper:
         #Cinput.connect(p=self.p_connect_input)
         Cee.connect(p=self.p_connect_ee)  # p_connect_ee) # connect randomly  (additional argument we might want: condition='i!=j')
         #Cei.connect(p=self.p_connect_ei)
-        Cii.connect(p=self.p_connect_ii)
+        #Cii.connect(p=self.p_connect_ii)
         #Cie.connect(p=self.p_connect_ie)
         Cei.connect(p=p_ei)
         Cie.connect(p=p_ie) # passed in as argument
+        Cii.connect(p=p_ii)
 
         N_ee = len(Cee)  # todo we don't want to do this (but I'm getting errors because e.g. len(alpha)!=len(Cee)
         N_ie = len(Cie)
@@ -303,16 +305,17 @@ class NetworkHelper:
         # BIN SIZE
         binwidth = 1 # ms
         numBins = np.ceil((self.duration/ms) / binwidth)+1 #  https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.convolve1d.html
-        raster = np.zeros((self.N,numBins))
+        raster = np.zeros((self.N_e,numBins))
 
         for i_spike in range(0,len(s_mon.i)):
             cellIdx = s_mon.i[i_spike]
-            binIdx = np.round((s_mon.t[i_spike] / ms) / binwidth)
-            raster[cellIdx][binIdx] += 1.0  #
+            if cellIdx < self.N_e: # only look at exc neurons
+                binIdx = np.round((s_mon.t[i_spike] / ms) / binwidth)
+                raster[cellIdx][binIdx] += 1.0  #
         raster = raster * (1.0/(binwidth/1000.0)) # convert to Hz # todo this is still wonky
 
         avgRates = np.nansum(raster,1) / (self.duration/ms / 1000) # avg rates in Hz during the trial (remove ms units and convert to s)
-        numActiveNeurons = np.sum(np.where(avgRates > 0.01,1,0))
+        numActiveNeurons = self.N_e # np.sum(np.where(avgRates > 0.01,1,0)) # previously used number of active neurons but currently ignoring this
 
         smoothSigma = 3  # ms
         sigmaBins = smoothSigma / binwidth # warning will this be a problem if it's not an integer? round if necessary
@@ -493,6 +496,9 @@ class NetworkHelper:
 
         score_components[0] = stable_duration_score
         score_components[1] = rate_score
+        for i_component in range(NUM_COMPONENTS):
+            if score_components[i_component] == nan:
+                score_components[i_component] = -np.inf
 
         if verboseplot:
             #print "asynchrony_score " + str(asynchrony_score)

@@ -36,7 +36,7 @@ p_connect_input = 0.2  # P(input cell -> excitatory cells)
 p_connect_ee = 0.15  # connection probabilities
 #p_connect_ei = 0.4
 #p_connect_ie = 0.2
-p_connect_ii = 0.3
+#p_connect_ii = 0.3
 
 logrand_sigma = 0.1  # leave these out and examine this continuum computationally
 logrand_mu = log(1) - 0.5 * (logrand_sigma ** 2)  # this condition ensures that the mean of the new distributoin = 1
@@ -83,7 +83,7 @@ networkconfig_dict = {"N_input":N_input,"N_e":N_e,"N":N,"N_i":N_i,
 
            "p_connect_input":p_connect_input,"p_connect_ee":p_connect_ee,
              #"p_connect_ei":p_connect_ei,p_connect_ie":p_connect_ie,
-            "p_connect_ii":p_connect_ii,
+            #"p_connect_ii":p_connect_ii,
            #"LOG_RAND_sigma":LOG_RAND_sigma,"LOG_RAND_mu":LOG_RAND_mu,
            "LOG_RAND_sigmaInh":LOG_RAND_sigmaInh,"LOG_RAND_muInh":LOG_RAND_muInh,
             "logrand_sigma":logrand_sigma, "logrand_mu":logrand_mu,

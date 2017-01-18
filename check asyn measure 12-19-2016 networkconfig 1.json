@@ -24,7 +24,6 @@
   "logrand_mu": -0.005000000000000001, 
   "logrand_sigma": 0.1, 
   "p_connect_ee": 0.15, 
-  "p_connect_ii": 0.3, 
   "p_connect_input": 0.2, 
   "taue": "10. ms", 
   "taui": "5. ms", 
