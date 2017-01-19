@@ -9,7 +9,7 @@ def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, ch
 
     N_bugs = oldPopulation.shape[1]
     N_params = oldPopulation.shape[0]
-    N_objectives = scores.shape[0] # number of scores, i.e. number of objective functions
+    N_objectives = scores.shape[1] # number of scores, i.e. number of objective functions (scores is flies x objectives)
 
     # init
     newPopulation = oldPopulation
@@ -18,11 +18,17 @@ def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, ch
     dominatedByOthers = np.zeros((N_bugs,1))
 
     for i_fly in range(0,N_bugs):
+        for i_score in range(0,N_objectives):
+            if np.isnan(scores[i_fly][i_score]):
+                print "warning: unexpected nan in scores"
+                scores[i_fly][i_score] = -np.inf  # (pesky nan problems) ultimately we should be able to omit this check
+
+    for i_fly in range(0,N_bugs):
         for j_fly in range(0,N_bugs):
 
             # NOTE this is a maximization framework
+
             # if all entries in j are more optimal than i or equal, and if at least one entry is different (i!=j):
-            scores[np.isnan(scores)] = -np.inf # first remove nans and penalize them
             if (scores[i_fly,:] <= scores[j_fly,:]).all() and (scores[i_fly,:] != scores[j_fly,:]).any():
 
                 dominatedByOthers[i_fly] += 1

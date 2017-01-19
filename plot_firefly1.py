@@ -10,13 +10,16 @@ from network_simulator_and_scorer import NetworkHelper
 #networkconfig_filestring = 'firefly cleanup 12-6-2016 networkconfig.json'
 #config_filestring = 'firefly cleanup 12-6-2016 config.json'
 
-config_filestring = 'check asyn measure 12-19-2016 config.json'
-networkconfig_filestring = 'check asyn measure 12-19-2016 networkconfig 1.json'
-results_filestring = 'check asyn measure 12-19-2016 results 1.json'
+config_filestring = '1-18-2016 config.json'
+networkconfig_filestring = '1-18-2016 networkconfig 1.json'
+results_filestring = '1-18-2016 results 1.json'
 #results_filestring = 'testfile.json'
 
 verboseplot = True
 simulatewinner = True
+
+dimx = 3 # for the 2D cuts # todo could grab the names from the config file for the figure labels
+dimy = 0
 
 
 ############ load the firefly results
@@ -80,8 +83,6 @@ for i_obj in range(0,N_objectives):
 # plot some of the progression (2D cut)
 if verboseplot:
 
-    dimx = 0
-    dimy = 1
     num_flies_to_plot = 2
 
     plt.figure(0)
@@ -91,13 +92,14 @@ if verboseplot:
 
         colorList = iter(plt.cm.rainbow(np.linspace(0, 1, N_gen)))
         for i_gen in range(N_gen):
-            xx[i_gen] = fireflyHistory[i_fly][i_gen]['params'][dimx]
-            yy[i_gen] = fireflyHistory[i_fly][i_gen]['params'][dimy]
+            flyID = np.random.randint(0,N_bugs)
+            xx[i_gen] = fireflyHistory[flyID][i_gen]['params'][dimx]
+            yy[i_gen] = fireflyHistory[flyID][i_gen]['params'][dimy]
 
             thisColor = next(colorList)
 
-            plt.plot(fireflyHistory[i_fly][i_gen]['params'][dimx],  # color code by generation
-                     fireflyHistory[i_fly][i_gen]['params'][dimy],
+            plt.plot(fireflyHistory[flyID][i_gen]['params'][dimx],  # color code by generation
+                     fireflyHistory[flyID][i_gen]['params'][dimy],
                      color=thisColor,marker='o')
 
         plt.plot(xx,yy) # continuous line for this fly
@@ -114,7 +116,7 @@ if verboseplot:
 ############# plot all information about a single firefly
 if verboseplot:
 
-    i_bug = 1 # todo grab a random bug
+    i_bug = flyID # the last random bug chosen above
     f, axarr = plt.subplots(6, sharex=True)
     yy = []
     for i in range(N_gen):
@@ -163,38 +165,72 @@ if verboseplot:
 
 ##################### plot distribution of scores
 
-paretoScores = np.zeros((N_objectives, N_bugs, N_gen))
+#paretoScores = np.zeros((N_objectives, N_bugs, N_gen))
 for i_objective in range(0, N_objectives):
     print "obj " + str(i_objective) + " " # todo grab name automatically
 
-    scores = np.zeros((N_bugs*N_gen,))
-    i_idx = 0
+    scores_inf_removed = np.zeros((N_bugs*N_gen,))
+    entry_counter = 0
     for entry in fireflyHistory:
         for i_gen in range(N_gen):
-            scores[i_idx] = entry[i_gen]['score'][i_objective]
-            i_idx += 1
-    paretoScores[i_objective] = np.reshape(scores,(N_bugs,N_gen)) # todo check if this reshaping is correct
+            if ~np.isinf(entry[i_gen]['score'][i_objective]):
+                if ~np.isnan(entry[i_gen]['score'][i_objective]):
+                    scores_inf_removed[entry_counter] = entry[i_gen]['score'][i_objective]
+                    entry_counter += 1
+    #paretoScores[i_objective] = np.reshape(scores,(N_bugs,N_gen)) # todo check if this reshaping is correct
 
     if verboseplot:
         try:
-            num_bins = 10
+            num_bins = 25
             plt.figure
-            plt.hist(paretoScores[i_objective],num_bins,histtype='step')  # histogram(scores)
+            plt.hist(scores_inf_removed,num_bins,histtype='step')  # histogram(scores)
+            plt.title('objective ' + str(i_objective))
             plt.ylabel('log count')
             plt.yscale('log',nonposy='clip')
             plt.show()
         except ValueError:
             print "error plotting hist. possiblly illegal range on scores"
 
-    minScore = np.nanmin(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])]) # make sure we're not looking at nans
+    #minScore = np.nanmin(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])]) # make sure we're not looking at nans
+    print " distribution of scores after removing nan's and inf's: "
+    minScore = np.min(scores_inf_removed)  # make sure we're not looking at nans
     print "min score " + str(minScore)
-    medianScore = np.nanmedian(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])]) # going to use this below:
+    #medianScore = np.nanmedian(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])]) # going to use this below:
+    medianScore = np.median(scores_inf_removed)
+    #paretoScores[i_objective][~np.isnan(paretoScores[i_objective])])  # going to use this below:
     print "median score " + str(medianScore)
-    maxScore = np.max(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])])
+    #maxScore = np.max(paretoScores[i_objective][~np.isnan(paretoScores[i_objective])])
+    maxScore = np.max(scores_inf_removed)
     print "max score " + str(maxScore)
 
+    if verboseplot:   # plot the spatial extent
 
+        MIN = np.median(scores_inf_removed) #
+        MAX = np.max(scores_inf_removed)
+        norm = mpl.colors.Normalize(vmin=MIN, vmax=MAX)
+        cmap = cm.rainbow
+        m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
+        plt.figure()
+        for i_gen in range(N_gen):
+            for i_fly in range(N_bugs):
+                xx = fireflyHistory[i_fly][i_gen]['params'][dimx]  # todo color code by generation and fly
+                yy = fireflyHistory[i_fly][i_gen]['params'][dimy]  # todo color code by generation and fly
+                z = fireflyHistory[i_fly][i_gen]['score'][i_obj]  # just the first score
+                thisColor = m.to_rgba(z)
+                plt.plot(xx, yy, 'o', color=thisColor)
+
+        xxlabel = PARAMS[dimx]
+        yylabel = PARAMS[dimy]
+        plt.xlabel(xxlabel)
+        plt.ylabel(yylabel)
+        plt.title('scores of the fireflies for obj ' + str(i_obj))
+        a = np.linspace(-15, 1, 10).reshape(1, -1)
+        a = np.vstack((a, a))
+        # plt.imshow(a, aspect='auto', cmap=plt.get_cmap(m), origin='lower')
+        # todo get colorscale showing
+        plt.show()
+'''
 ######################## map of the solution space: ...
 dimx = 0
 dimy = 1
@@ -227,9 +263,9 @@ for i_obj in range(0,N_objectives):
         # todo get colorscale showing
     plt.show()
 
+'''
 
-
-####################### plot score trajectories
+###################### plot score trajectories
 plt.figure()
 for i_dim in range(0,N_objectives):
     # todo add score vs time plots

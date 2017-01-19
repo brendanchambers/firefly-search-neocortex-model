@@ -9,8 +9,8 @@ from memory_profiler import profile
 
 #@profile
 def run_firefly1():
-    config_filestring = 'check asyn measure 12-19-2016 config.json'
-    networkconfig_filestring = 'check asyn measure 12-19-2016 networkconfig 1.json'
+    config_filestring = '1-18-2016 config.json'
+    networkconfig_filestring = '1-18-2016 networkconfig 1.json'
 
 
     ############### load the firefly config file

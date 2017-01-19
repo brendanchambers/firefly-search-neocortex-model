@@ -8,9 +8,9 @@ import time
 from memory_profiler import profile
 
 #@profile
-def run_firefly1():
-    config_filestring = 'check asyn measure 12-19-2016 config.json'
-    networkconfig_filestring = 'check asyn measure 12-19-2016 networkconfig 2.json'
+def run_firefly2():
+    config_filestring = '1-18-2016 config.json'
+    networkconfig_filestring = '1-18-2016 networkconfig 2.json'
 
 
     ############### load the firefly config file
@@ -122,4 +122,4 @@ def run_firefly1():
     resultsFile.write("]")
     resultsFile.close()
 
-run_firefly1()
+run_firefly2()

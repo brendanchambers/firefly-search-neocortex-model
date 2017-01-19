@@ -6,14 +6,14 @@ from pprint import pprint
 
 ###### firefly config
 
-config_prefix = 'check asyn measure 12-19-2016' # for making the filestring
+config_prefix = '1-18-2016' # for making the filestring
 
-verbose = 'test clean python architecture, asynchrony hacky' # optionally provide a general description of the current endeavor
+verbose = 'compare weight distributions' # optionally provide a general description of the current endeavor
 PARAMS = ['p_ei','p_ie','p_ii','w_input'] # ,'lognorm_sigma'] # name for easier printing
 OBJECTIVES = ['stable duration','rate_score'] # '['asynchrony','stable duration'] # names for easier printing & reference
                     # (for now the second obj dimension is not necessary)
 
-N_gen = 75  # working towards 100+
+N_gen = 150 # working towards 100+
 N_bugs = 30
 N_params = len(PARAMS)
 N_objectives = len(OBJECTIVES)
@@ -21,7 +21,7 @@ N_objectives = len(OBJECTIVES)
 # range for [p_ei, p_ie, p_ii, w_input]
 MEANS = [0.15, 0.15, 0.2, 10] # ,-1] # for each param
 STDS = [0.1, 0.1, 0.1, 1] # ,3]
-MAXES = [0.3, 0.3, 0.5, 11] # , 5]
+MAXES = [0.3, 0.3, 0.5, 15] # , 5]
 MINS = [0.1, 0.1, 0.05, 9] # , -10]  # sigma must be > 0
 
 
@@ -32,10 +32,10 @@ for i_param in range(N_params):
     characteristic_scales[i_param] = 2*STDS[i_param]
 
 alpha = 0.05 # NOTE alpha gets scaled for each param in Firefly Dynamics function
-beta = 5  # >4 yields chaotic firefly dynamics
+beta = 3  # >4 yields chaotic firefly dynamics
 absorption = 0.6 # somewhere around 0.5 is good according to Yang
 
-annealing_constant = 0.9 # currently only beta is being annealed
+annealing_constant = 0.99 # currently only beta is being annealed
 
 ############# network config
 

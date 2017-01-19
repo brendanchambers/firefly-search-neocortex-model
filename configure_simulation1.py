@@ -4,7 +4,7 @@ import json
 # todo test this
 
 
-config_prefix = 'check asyn measure 12-19-2016'  # for making the filestring - this should match the firefly config (todo make this automatic)
+config_prefix = '1-18-2016'  # for making the filestring - this should match the firefly config (todo make this automatic)
 
 ######## simulation parameters #############
 N_input = 200  # let's add an input population
@@ -13,7 +13,7 @@ N = 4000
 N_i = N - N_e  # inhibitory neurons
 
 duration = "0.3 second"  # total duration (format as a string as shown)
-input_duration = "0.3 second"  # inject some current (format as a string as shown)
+input_duration = "0.3 second"  # inject some current (format as a string as shown) # todo this isn't getting used is it?
 input_rate = 4 * Hz  # Hz
 # input_current = 0 # nA
 
@@ -32,16 +32,16 @@ Vcut = VT + 5 * DeltaT
 we = 1 * nS  # excitatory synaptic weight (this gets multiplied by a logrand so make sure we get the scaling right)
 wi = 10 * nS  # inhibitory synaptic weight
 
-p_connect_input = 0.2  # P(input cell -> excitatory cells)
+p_connect_input = 0.2  # P(input cell -> excitatory cells) # todo this doesn't get used anymore, does it?
 p_connect_ee = 0.15  # connection probabilities
 #p_connect_ei = 0.4
 #p_connect_ie = 0.2
 #p_connect_ii = 0.3
 
-logrand_sigma = 0.1  # leave these out and examine this continuum computationally
+logrand_sigma = 0.5  # leave these out and examine this continuum computationally
 logrand_mu = log(1) - 0.5 * (logrand_sigma ** 2)  # this condition ensures that the mean of the new distributoin = 1
 
-LOG_RAND_sigmaInh = 0.1  # suggesting we hold these constant and only vary excitatory connections
+LOG_RAND_sigmaInh = 0.01  # suggesting we hold these constant and only vary excitatory connections
 LOG_RAND_muInh = log(1) - 0.5 * (LOG_RAND_sigmaInh ** 2)  # (so we aren't scaling total weight as we explore heavy-tailedness)
 
 # Pick an electrophysiological behaviour
@@ -51,6 +51,7 @@ tauw, a, b, Vr, EE, EI, taue, taui = 144 * ms, 4 * nS, 0.0805 * nA, -70.6 * mV, 
 
 ########### dynamics of the model ############
 # ok to get rid of this one fyi:
+'''
 eqs = """
 dvm/dt = ( -self.gL*(vm-self.EL) + self.gL*self.DeltaT*exp((vm-self.VT)/self.DeltaT) - gE*(vm-self.EE) - g_input*(vm-EE) - gI*(vm-self.EI) - w )/self.C : volt
 dgE/dt = -gE/self.taue : siemens
@@ -58,6 +59,7 @@ dw/dt = (self.a*(vm - self.EL) - w)/self.tauw : amp
 dgI/dt = -gI/self.taui : siemens
 g_input = g_input_timedArray(t,i) : siemens
 """
+'''
 
 eqs = """
 dvm/dt = ( -gL*(vm-EL) + gL*DeltaT*exp((vm-VT)/DeltaT) - gE*(vm-EE) - g_input_timedArray(t,i)*(vm-EE) - gI*(vm-EI) - w )/C : volt

@@ -146,7 +146,39 @@ class NetworkHelper:
         #neurons = NeuronGroup(self.N, model=eqs, threshold='vm>Vcut',
         #                      reset="vm=Vr; w+=b", refractory=1*ms, method='rk4')
 
+        block_duration = 150 * ms
+        input_duration = 50 * ms
+        input_mean = 1  # e-9 # scale from siemens to nS
+        input_sigma = 0.3333  # e-9 # scale from siemens to nS   (todo think about scaling the variability and mean)
+        t_res = defaultclock.dt
+        total_blocks = int(np.ceil(self.duration*1.0 / block_duration))
+        total_steps = (self.duration / t_res) + 1
+        steps_per_block = (block_duration / t_res) + 1
+        num_input_steps = (input_duration / t_res) + 1
+        cell_inputs = np.zeros((total_steps, self.N))
+        cur_step = 0
+        for i_blocks in range(total_blocks):
 
+            if i_blocks == total_blocks-1:
+                steps_remaining = total_steps - cur_step + 1
+                #print np.shape(np.random.normal(input_mean, input_sigma, (steps_remaining, self.N)))
+                #print np.shape(cell_inputs[cur_step:][:self.N])
+                if steps_remaining < num_input_steps:
+                    cell_inputs[cur_step:][:] = np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))
+                else:
+                    cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
+                                                                                             (num_input_steps, self.N))
+            else:
+
+                #print num_input_steps
+                #print self.N_e
+                #print np.shape(np.random.normal(input_mean, input_sigma, (num_input_steps, self.N)))
+                #print np.shape(cell_inputs[cur_step:][:])
+                cell_inputs[cur_step:(cur_step+num_input_steps)][:] = np.random.normal(input_mean, input_sigma, (num_input_steps, self.N))
+                cur_step += steps_per_block
+
+        cell_inputs[:, self.N_e:] = 0  # set inhibitory inputs to zero
+        '''
         duration = 50 * ms  # temp putting all this here, todo get from config file appropriately
         t_res = defaultclock.dt # 0.1 * ms
         input_mean = 1 # e-9 # scale from siemens to nS
@@ -159,6 +191,7 @@ class NetworkHelper:
         #plt.figure
         #plt.imshow(cell_inputs, interpolation='nearest', aspect='auto')
         #plt.show()
+        '''
         cell_inputs *= (w_input/nS) # scale by the input strength, which is being optimized as args[2]
         #print cell_inputs[1:10,1:10]
         g_input_timedArray = TimedArray(cell_inputs * nS, dt=defaultclock.dt)
@@ -328,8 +361,8 @@ class NetworkHelper:
 
         IGNITION_THRESH = 0.5  # avg firing rate (Hz) among active cells -> to count as an ignition
         QUENCH_THRESH = 0.5
-        PAROXYSM_THRESH = 50 # maximum allowed rate
-                    #   note these aren't normalized right with the smoothing kernel
+        PAROXYSM_THRESH = 15 # maximum allowed rate
+                    #   note triple check that these are normalized correctly with the smoothing kernel
 
         ignitionFrame = -1  # first onset
         threshCrossIdxs = np.where(meanSmoothRate > IGNITION_THRESH)  # is where the correct function
@@ -354,21 +387,21 @@ class NetworkHelper:
 
         ###########################     duration of first stable firing epoch
 
-        if ignitionFrame != -1:
+        if ignitionFrame != -1: # if network did ignite
             stablePeriodBegin = ignitionFrame
-            if paroxysmFrame != -1:
-                stablePeriodEnd = paroxysmFrame  # this is kind of flawed - consider situation where quench precedes parox later - todo
+            if paroxysmFrame != -1: # and did seize
+                stablePeriodEnd = paroxysmFrame  # (assumes seize happens before quenching)
             else:
-                if quenchFrame != -1: # if network ignited then quenched
-                    stablePeriodEnd = quenchFrame
+                if quenchFrame != -1: # if network ignited and never seized
+                    stablePeriodEnd = quenchFrame # , but did quench
                 else:
-                    stablePeriodEnd = len(sumSmoothRate) # never quenched
+                    stablePeriodEnd = len(sumSmoothRate) # but never quenched
         else:
             stablePeriodBegin = -1 # else if network never ignited:
             stablePeriodEnd = -1
 
 
-        totalSpiking = np.sum(meanSmoothRate[stablePeriodBegin:stablePeriodEnd]) # get sum over mean rate
+        totalSpiking = np.sum(meanSmoothRate[stablePeriodBegin:stablePeriodEnd]) # get sum over mean rate  # todo maybe use active cells only here
         stable_bins = (stablePeriodEnd - stablePeriodBegin)
         maxPossibleSpiking = PAROXYSM_THRESH * stable_bins # get max possible
         # subtract, and norm to length
@@ -497,7 +530,7 @@ class NetworkHelper:
         score_components[0] = stable_duration_score
         score_components[1] = rate_score
         for i_component in range(NUM_COMPONENTS):
-            if score_components[i_component] == nan:
+            if np.isnan(score_components[i_component]):
                 score_components[i_component] = -np.inf
 
         if verboseplot:
