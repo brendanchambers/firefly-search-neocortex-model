@@ -32,10 +32,10 @@ for i_param in range(N_params):
     characteristic_scales[i_param] = 2*STDS[i_param]
 
 alpha = 0.05 # NOTE alpha gets scaled for each param in Firefly Dynamics function
-beta = 6  # >4 yields chaotic firefly dynamics
+beta = 4.25  # >4 yields chaotic firefly dynamics
 absorption = 0.6 # somewhere around 0.5 is good according to Yang
 
-annealing_constant = 0.99 # currently only beta is being annealed
+annealing_constant = 0.999 # currently only beta is being annealed
 
 ############# network config
 
