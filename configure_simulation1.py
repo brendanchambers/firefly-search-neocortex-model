@@ -38,7 +38,7 @@ p_connect_ee = 0.15  # connection probabilities
 #p_connect_ie = 0.2
 #p_connect_ii = 0.3
 
-logrand_sigma = 0.5  # leave these out and examine this continuum computationally
+logrand_sigma = 1  # leave these out and examine this continuum computationally
 logrand_mu = log(1) - 0.5 * (logrand_sigma ** 2)  # this condition ensures that the mean of the new distributoin = 1
 
 LOG_RAND_sigmaInh = 0.01  # suggesting we hold these constant and only vary excitatory connections

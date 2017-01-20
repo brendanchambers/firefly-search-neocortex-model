@@ -39,9 +39,10 @@ def run_firefly1():
 
     alpha = firefly_config['alpha'] # NOTE alpha gets scaled by char scale for each param in Firefly Dynamics function
     beta = firefly_config['beta']  # >4 yields chaotic firefly dynamics
+    #print "beta t0 : " + str(beta)
     absorption = firefly_config['absorption'] # somewhere around 0.5 is good according to Yang
 
-    annealing_constant = firefly_config['absorption'] # currently only beta is being annealed
+    annealing_constant = firefly_config['annealing_constant'] # currently only beta is being annealed
 
 
     ############ initializations
@@ -80,6 +81,8 @@ def run_firefly1():
 
         # todo  handle meta-heuristics
         beta *= annealing_constant
+        #print "annealing constant: " + str(annealing_constant)
+        #print "beta updated: " + str(beta)
         for i_fly in range(0, N_bugs): # todo better to enumerate the firebugs directly
             scoreVectors[i_fly,:] = network_helper.simulateActivity(population[:,i_fly],verboseplot=False)
             #scoreVectors[i_fly, 1] = rosenbrock_obj(population[:, i_fly]) # temp just use the same obj for both

@@ -10,12 +10,12 @@ from network_simulator_and_scorer import NetworkHelper
 #networkconfig_filestring = 'firefly cleanup 12-6-2016 networkconfig.json'
 #config_filestring = 'firefly cleanup 12-6-2016 config.json'
 
-#config_filestring = '1-18-2016 config.json'
-#networkconfig_filestring = '1-18-2016 networkconfig 2.json'
-#results_filestring = '1-18-2016 results 2.json'
-config_filestring = 'results archive/check asyn measure 12-19-2016 config.json'
-networkconfig_filestring = 'results archive/check asyn measure 12-19-2016 networkconfig 2.json'
-results_filestring = 'results archive/check asyn measure 12-19-2016 results 2.json'
+config_filestring = '1-18-2016 config.json'
+networkconfig_filestring = '1-18-2016 networkconfig 2.json'
+results_filestring = '1-18-2016 results 2.json'
+#config_filestring = 'results archive/check asyn measure 12-19-2016 config.json'
+#networkconfig_filestring = 'results archive/check asyn measure 12-19-2016 networkconfig 2.json'
+#results_filestring = 'results archive/check asyn measure 12-19-2016 results 2.json'
 #results_filestring = 'testfile.json'
 
 verboseplot = True

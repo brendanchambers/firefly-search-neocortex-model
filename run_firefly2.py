@@ -41,7 +41,7 @@ def run_firefly2():
     beta = firefly_config['beta']  # >4 yields chaotic firefly dynamics
     absorption = firefly_config['absorption'] # somewhere around 0.5 is good according to Yang
 
-    annealing_constant = firefly_config['absorption'] # currently only beta is being annealed
+    annealing_constant = firefly_config['annealing_constant'] # currently only beta is being annealed
 
 
     ############ initializations
