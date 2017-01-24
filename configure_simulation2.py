@@ -41,7 +41,7 @@ p_connect_ee = 0.15 # connection probabilities
 logrand_sigma = 2  # leave these out and examine this   continuum computationally
 logrand_mu = log(1) - 0.5 * (logrand_sigma ** 2)  # this condition ensures that the mean of the new distributoin = 1
 
-LOG_RAND_sigmaInh = 0.01  # suggesting we hold these constant and only vary excitatory connections
+LOG_RAND_sigmaInh = 1  # suggesting we hold these constant and only vary excitatory connections
 LOG_RAND_muInh = log(1) - 0.5 * (LOG_RAND_sigmaInh * LOG_RAND_sigmaInh)  # (so we aren't scaling total weight as we explore heavy-tailedness)
 
 # Pick an electrophysiological behaviour

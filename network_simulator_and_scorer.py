@@ -348,16 +348,14 @@ class NetworkHelper:
         raster = raster * (1.0/(binwidth/1000.0)) # convert to Hz # todo this is still wonky
 
         avgRates = np.nansum(raster,1) / (self.duration/ms / 1000) # avg rates in Hz during the trial (remove ms units and convert to s)
-        numActiveNeurons = self.N_e # np.sum(np.where(avgRates > 0.01,1,0)) # previously used number of active neurons but currently ignoring this
+        numActiveNeurons = np.sum(np.where(avgRates > 0.01,1,0)) # previously used number of active neurons but currently ignoring this
 
         smoothSigma = 3  # ms
         sigmaBins = smoothSigma / binwidth # warning will this be a problem if it's not an integer? round if necessary
         raster_smooth = filt.gaussian_filter1d(raster,sigma=smoothSigma,axis=1) # todo should smooth BEFORE rebinning
         sumSmoothRate = np.sum(raster_smooth,0) # todo set this up relative to N_e
-        if numActiveNeurons > 0:
-            meanSmoothRate = (1./numActiveNeurons)*sumSmoothRate # note, does the division make f.p. roundoff worse?
-        else:
-            meanSmoothRate = np.zeros((numBins))
+
+        meanSmoothRate = (1./self.N_e)*sumSmoothRate # note, does the division make f.p. roundoff worse?
 
         IGNITION_THRESH = 0.5  # avg firing rate (Hz) among active cells -> to count as an ignition
         QUENCH_THRESH = 0.5
@@ -409,7 +407,7 @@ class NetworkHelper:
 
         stable_duration_score = (stablePeriodEnd - stablePeriodBegin) * binwidth # e.g. stable duration
         print stable_duration_score
-        print "above: stable duration score"
+        #print "above: stable duration score"
 
         ########################## plotting for stable duration score
         if verboseplot:
@@ -440,11 +438,14 @@ class NetworkHelper:
 
 
         #####################  compute corr coeffs of rates  # todo do this better
-        '''
-        if stablePeriodBegin == -1:
-            asynchrony_score = -1 # no meaningful definition for null trials
+        CORR_COEFF_SAMPLE = 100 # how many neurons should we compute corr coeffs for?
+        if numActiveNeurons < CORR_COEFF_SAMPLE:  # temp - try looking at unstable periods too
+        #if stable_bins <= 5:
+            asynchrony_score = -np.inf # no meaningful definition for null trials
         else:
-            corrcoeffs = np.corrcoef(raster[0:self.N_e][stablePeriodBegin:stablePeriodEnd])  # look at excitatory cells only
+            #corrcoeffs = np.corrcoef(raster[0:self.N_e][stablePeriodBegin:stablePeriodEnd])  # look at excitatory cells only
+            sampleIdxs = np.argpartition(avgRates,-CORR_COEFF_SAMPLE)[-CORR_COEFF_SAMPLE:] # K highest rates from high to low
+            corrcoeffs = np.corrcoef(raster_smooth[sampleIdxs][:]) # corr coeffs among sample neurons
             if len(corrcoeffs) > 1:
                 np.fill_diagonal(corrcoeffs, np.nan) # mask out the self-self comparisons (replace with nans)
             #print "sample diagonal element - " , corrcoeffs[5][5] # testing
@@ -468,7 +469,7 @@ class NetworkHelper:
                 plt.hist(corrcoeffs[~np.isnan(corrcoeffs)], bins=40)
                 plt.show()
                 plt.title('distributon of correlation coefficients')  # todo add landmarks to plot
-        '''
+
 
  ######################    scaling with K      take multiple samples from the corrcoeffs # todo this, didn't really work, currently not using
         '''
@@ -522,22 +523,24 @@ class NetworkHelper:
 
 ###########################      package it all up
 
-        NUM_COMPONENTS = 2 # temp - asynchrony and null # todo need to read this in automatically in the constructor
+        NUM_COMPONENTS = 3 # temp - asynchrony and null # todo need to read this in automatically in the constructor
         score_components = np.zeros((NUM_COMPONENTS,))
         #score_components[0] = asynchrony_score # asynchrony_score # it's named like this because the plan used to be, pareto front
         #score_components[1] = stable_duration_score # temp
 
         score_components[0] = stable_duration_score
         score_components[1] = rate_score
+        score_components[2] = asynchrony_score
         for i_component in range(NUM_COMPONENTS):
             if np.isnan(score_components[i_component]):
                 score_components[i_component] = -np.inf
 
-        if verboseplot:
+        #if verboseplot:
             #print "asynchrony_score " + str(asynchrony_score)
-            print " stable duration score " + str(stable_duration_score)
-            print " w input " + str(w_input)
-            print "rate score " + str(rate_score)
+        print " stable duration score " + str(stable_duration_score)
+        print " w input " + str(w_input)
+        print "rate score " + str(rate_score)
+        print "asynchrony score " + str(asynchrony_score)
 
         return score_components
 
