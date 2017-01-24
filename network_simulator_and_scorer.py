@@ -362,6 +362,7 @@ class NetworkHelper:
         PAROXYSM_THRESH = 15 # maximum allowed rate
                     #   note triple check that these are normalized correctly with the smoothing kernel
 
+        '''
         ignitionFrame = -1  # first onset
         threshCrossIdxs = np.where(meanSmoothRate > IGNITION_THRESH)  # is where the correct function
         if np.shape(threshCrossIdxs[0]) != (0,):
@@ -382,9 +383,10 @@ class NetworkHelper:
 
         if np.shape(threshCrossIdxs) != (1, 0):
             offsetFrame = threshCrossIdxs[0]
+            '''
 
         ###########################     duration of first stable firing epoch
-
+        '''
         if ignitionFrame != -1: # if network did ignite
             stablePeriodBegin = ignitionFrame
             if paroxysmFrame != -1: # and did seize
@@ -408,6 +410,26 @@ class NetworkHelper:
         stable_duration_score = (stablePeriodEnd - stablePeriodBegin) * binwidth # e.g. stable duration
         print stable_duration_score
         #print "above: stable duration score"
+        '''
+
+        # redesigning this - count total number of bins with stable firing
+        stableBins = []
+        for idx,val in enumerate(meanSmoothRate):
+            if val > QUENCH_THRESH:
+                if val < PAROXYSM_THRESH:
+                    stableBins.append(idx)
+
+        numStableBins = len(stableBins)
+        stable_duration_score = numStableBins * binwidth # total stable duration
+
+        # add information about sum square rates
+        maxPossibleSpiking = PAROXYSM_THRESH * PAROXYSM_THRESH * numStableBins  # get max possible sum square spiking
+        totalSpiking = 0
+        for idx in stableBins:
+            totalSpiking += (np.power(meanSmoothRate[idx], 2))  # sum square spiking
+        rate_score = maxPossibleSpiking - totalSpiking  # reward low levels of firing spread over many bins
+
+
 
         ########################## plotting for stable duration score
         if verboseplot:
@@ -426,9 +448,9 @@ class NetworkHelper:
             plt.title('how does the raster look after smoothing')
             plt.show()
 
-            print "ignition frame: " + str(ignitionFrame)
-            print "quench frame: " + str(quenchFrame)
-            print "paroxysm frame: " + str(paroxysmFrame)
+            #print "ignition frame: " + str(ignitionFrame)
+            #print "quench frame: " + str(quenchFrame)
+            #print "paroxysm frame: " + str(paroxysmFrame)
 
             plt.figure
             plt.plot(meanSmoothRate)
@@ -438,10 +460,12 @@ class NetworkHelper:
 
 
         #####################  compute corr coeffs of rates  # todo do this better
-        CORR_COEFF_SAMPLE = 100 # how many neurons should we compute corr coeffs for?
-        if numActiveNeurons < CORR_COEFF_SAMPLE:  # temp - try looking at unstable periods too
-        #if stable_bins <= 5:
+        CORR_COEFF_SAMPLE = 200 # how many neurons should we compute corr coeffs for?
+        BINS_SAMPLE = 20
+        if numActiveNeurons < CORR_COEFF_SAMPLE:  # impose min number of active neurons
             asynchrony_score = -np.inf # no meaningful definition for null trials
+        elif numStableBins < BINS_SAMPLE:
+            asynchrony_score = -np.inf   # impose min number of stable bins
         else:
             #corrcoeffs = np.corrcoef(raster[0:self.N_e][stablePeriodBegin:stablePeriodEnd])  # look at excitatory cells only
             sampleIdxs = np.argpartition(avgRates,-CORR_COEFF_SAMPLE)[-CORR_COEFF_SAMPLE:] # K highest rates from high to low
