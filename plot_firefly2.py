@@ -285,6 +285,9 @@ if simulatewinner:
 
     print 'simulating winning fly'
     network_helper = NetworkHelper(networkconfig_filestring)
+    if network_helper.__class__.cell_inputs == None:
+        network_helper.initializeInputs()
+
 
 
     for i_obj in range(0,N_objectives):

@@ -70,7 +70,8 @@ def run_firefly1():
     resultsFile.write("[") # for formatting a valid json object
 
     network_helper = NetworkHelper(networkconfig_filestring) # this object does all the simulation work
-                                                            # todo would be nice to initialize inputs as a global static variable in here
+    if network_helper.__class__.cell_inputs == None: # if not yet initialized
+        network_helper.initializeInputs()  # initialize inputs as a global static variable - currently this still gets copied when it gets made into a timed array
 
     startTime = time.time()
 

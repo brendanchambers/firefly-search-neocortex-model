@@ -17,6 +17,8 @@ from memory_profiler import profile
 
 class NetworkHelper:
 
+    cell_inputs = None # intially null - set after construction so that we know N_e, N, etc
+
     def __init__(self, networkconfig_filestring):
 
         # load the networkconfig file
@@ -97,6 +99,42 @@ class NetworkHelper:
 
         self.eqs = Equations(str(network_config['eqs'])) # dynamics of the model
 
+    def initializeInputs(self):
+        block_duration = 150 * ms
+        input_duration = 50 * ms
+        input_mean = 1  # e-9 # scale from siemens to nS
+        input_sigma = 0.3333  # e-9 # scale from siemens to nS   (todo think about scaling the variability and mean)
+        t_res = defaultclock.dt
+        total_blocks = int(np.ceil(self.duration * 1.0 / block_duration))
+        total_steps = (self.duration / t_res) + 1
+        steps_per_block = (block_duration / t_res) + 1
+        num_input_steps = (input_duration / t_res) + 1
+        NetworkHelper.cell_inputs = np.zeros((total_steps, self.N))
+        cur_step = 0
+        for i_blocks in range(total_blocks):
+
+            if i_blocks == total_blocks - 1:
+                steps_remaining = total_steps - cur_step + 1
+                # print np.shape(np.random.normal(input_mean, input_sigma, (steps_remaining, self.N)))
+                # print np.shape(cell_inputs[cur_step:][:self.N])
+                if steps_remaining < num_input_steps:
+                    NetworkHelper.cell_inputs[cur_step:][:] = np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))
+                else:
+                    NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
+                                                                                             (num_input_steps, self.N))
+            else:
+
+                # print num_input_steps
+                # print self.N_e
+                # print np.shape(np.random.normal(input_mean, input_sigma, (num_input_steps, self.N)))
+                # print np.shape(cell_inputs[cur_step:][:])
+                NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
+                                                                                         (num_input_steps, self.N))
+                cur_step += steps_per_block
+
+        NetworkHelper.cell_inputs[:, self.N_e:] = 0  # set inhibitory inputs to zero
+
+
     #@profile
     def  simulateActivity(self, input_args, verboseplot=False):
         p_ei = input_args[0]
@@ -146,38 +184,7 @@ class NetworkHelper:
         #neurons = NeuronGroup(self.N, model=eqs, threshold='vm>Vcut',
         #                      reset="vm=Vr; w+=b", refractory=1*ms, method='rk4')
 
-        block_duration = 150 * ms
-        input_duration = 50 * ms
-        input_mean = 1  # e-9 # scale from siemens to nS
-        input_sigma = 0.3333  # e-9 # scale from siemens to nS   (todo think about scaling the variability and mean)
-        t_res = defaultclock.dt
-        total_blocks = int(np.ceil(self.duration*1.0 / block_duration))
-        total_steps = (self.duration / t_res) + 1
-        steps_per_block = (block_duration / t_res) + 1
-        num_input_steps = (input_duration / t_res) + 1
-        cell_inputs = np.zeros((total_steps, self.N))
-        cur_step = 0
-        for i_blocks in range(total_blocks):
 
-            if i_blocks == total_blocks-1:
-                steps_remaining = total_steps - cur_step + 1
-                #print np.shape(np.random.normal(input_mean, input_sigma, (steps_remaining, self.N)))
-                #print np.shape(cell_inputs[cur_step:][:self.N])
-                if steps_remaining < num_input_steps:
-                    cell_inputs[cur_step:][:] = np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))
-                else:
-                    cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
-                                                                                             (num_input_steps, self.N))
-            else:
-
-                #print num_input_steps
-                #print self.N_e
-                #print np.shape(np.random.normal(input_mean, input_sigma, (num_input_steps, self.N)))
-                #print np.shape(cell_inputs[cur_step:][:])
-                cell_inputs[cur_step:(cur_step+num_input_steps)][:] = np.random.normal(input_mean, input_sigma, (num_input_steps, self.N))
-                cur_step += steps_per_block
-
-        cell_inputs[:, self.N_e:] = 0  # set inhibitory inputs to zero
         '''
         duration = 50 * ms  # temp putting all this here, todo get from config file appropriately
         t_res = defaultclock.dt # 0.1 * ms
@@ -192,9 +199,9 @@ class NetworkHelper:
         #plt.imshow(cell_inputs, interpolation='nearest', aspect='auto')
         #plt.show()
         '''
-        cell_inputs *= (w_input/nS) # scale by the input strength, which is being optimized as args[2]
-        #print cell_inputs[1:10,1:10]
-        g_input_timedArray = TimedArray(cell_inputs * nS, dt=defaultclock.dt)
+        #cell_inputs *= (w_input/nS) # scale by the input strength, which is being optimized as args[2]
+        #g_input_timedArray = TimedArray(cell_inputs * nS, dt=defaultclock.dt)
+        g_input_timedArray = TimedArray(NetworkHelper.cell_inputs * w_input, dt=defaultclock.dt)  # w_input is in nS, giving these the correct units
         neurons = NeuronGroup(self.N,   # todo provide input to E neurons only?
                               model=eqs, threshold='vm>Vcut', reset="vm=Vr; w+=b",
                               refractory=1 * ms, method='rk4')
@@ -461,7 +468,7 @@ class NetworkHelper:
 
         #####################  compute corr coeffs of rates  # todo do this better
         CORR_COEFF_SAMPLE = 200 # how many neurons should we compute corr coeffs for?
-        BINS_SAMPLE = 20
+        BINS_SAMPLE = 100
         if numActiveNeurons < CORR_COEFF_SAMPLE:  # impose min number of active neurons
             asynchrony_score = -np.inf # no meaningful definition for null trials
         elif numStableBins < BINS_SAMPLE:
