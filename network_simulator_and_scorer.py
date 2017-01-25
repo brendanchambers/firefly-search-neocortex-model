@@ -481,12 +481,6 @@ class NetworkHelper:
                 np.fill_diagonal(corrcoeffs, np.nan) # mask out the self-self comparisons (replace with nans)
             #print "sample diagonal element - " , corrcoeffs[5][5] # testing
 
-            plt.figure()
-            xx = arange(0,self.duration/ms + 0.01,binwidth) # add epsilon to get the last bin
-            plt.plot(xx,np.sum(raster_smooth,0))
-            plt.title('sum activity')
-            plt.ylabel('(Hz) incorrect normalization? ') # todo superimpose mean  # todo add plot for slope
-            plt.xlabel('time (ms)')
             asynchrony_score = 1 - mean(np.abs(corrcoeffs[~np.isnan(corrcoeffs)])) # this isn't working well
             # asynchrony_score = -(np.sum(np.abs(corrcoeffs[~np.isnan(corrcoeffs)])))  # minimize the corr corrcoeffs (= maximize -1 * sumsquare corrcoeffs)
             # todo how about based on power in the autocorr function

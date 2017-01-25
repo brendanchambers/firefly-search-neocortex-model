@@ -159,6 +159,66 @@ if verboseplot:
 
 
 
+#  todo compare magnitude of attraction vs noise across parameters - seems like something is wrong with the scaling
+if verboseplot:
+
+    i_bug = flyID # the last random bug chosen above
+    f, axarr = plt.subplots(4, sharex=True)
+
+    # param 1
+    yy1 = []
+    yy2 = []
+    yy3 = []
+    for i in range(N_gen):
+        yy1.append(fireflyHistory[i_bug][i]['attraction'][0])
+        yy2.append(fireflyHistory[i_bug][i]['noise'][0])
+        yy3.append(fireflyHistory[i_bug][i]['params'][0])
+    axarr[0].plot(range(N_gen), yy1)
+    axarr[0].plot(range(N_gen), yy2)
+    axarr[0].plot(range(N_gen), yy3)
+    axarr[0].set_ylabel('dimension 0')
+
+    # param 2
+    yy1 = []
+    yy2 = []
+    yy3 = []
+    for i in range(N_gen):
+        yy1.append(fireflyHistory[i_bug][i]['attraction'][1])
+        yy2.append(fireflyHistory[i_bug][i]['noise'][1])
+        yy3.append(fireflyHistory[i_bug][i]['params'][1])
+    axarr[1].plot(range(N_gen), yy1)
+    axarr[1].plot(range(N_gen), yy2)
+    axarr[1].plot(range(N_gen), yy3)
+    axarr[1].set_ylabel('dimension 1')
+
+    # param 3
+    yy1 = []
+    yy2 = []
+    yy3 = []
+    for i in range(N_gen):
+        yy1.append(fireflyHistory[i_bug][i]['attraction'][2])
+        yy2.append(fireflyHistory[i_bug][i]['noise'][2])
+        yy3.append(fireflyHistory[i_bug][i]['params'][2])
+    axarr[2].plot(range(N_gen), yy1)
+    axarr[2].plot(range(N_gen), yy2)
+    axarr[2].plot(range(N_gen), yy3)
+    axarr[2].set_ylabel('dimension 2')
+
+    # param 4
+    yy1 = []
+    yy2 = []
+    yy3 = []
+    for i in range(N_gen):
+        yy1.append(fireflyHistory[i_bug][i]['attraction'][3])
+        yy2.append(fireflyHistory[i_bug][i]['noise'][3])
+        yy3.append(fireflyHistory[i_bug][i]['params'][3])
+    axarr[3].plot(range(N_gen), yy1)
+    axarr[3].plot(range(N_gen), yy2)
+    axarr[3].plot(range(N_gen), yy3)
+    axarr[3].set_ylabel('dimension 3')
+
+    plt.xlabel('generations')
+    plt.show()
 
 
 

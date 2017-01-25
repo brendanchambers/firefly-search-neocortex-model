@@ -6,6 +6,7 @@ from firefly_dynamics_rescaled import firefly_dynamics_rescaled
 from network_simulator_and_scorer import NetworkHelper
 import time
 from memory_profiler import profile
+import matplotlib.pyplot as plt
 
 #@profile
 def run_firefly1():
@@ -104,6 +105,13 @@ def run_firefly1():
         attractionTerms = result['attractionTerms']
         noiseTerms = result['noiseTerms']
         population = newPopulation
+
+        # temporary: look at updateCounts
+        #plt.figure()
+        #plt.hist(result['dominatedByOthers'])
+        print "update counts: " + str(result['dominatedByOthers'])
+        #plt.title('update counts')
+        #plt.show()
 
         # check bounds on parameter values
         for i_param in range(N_params):
