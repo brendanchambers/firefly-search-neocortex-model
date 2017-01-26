@@ -429,10 +429,16 @@ class NetworkHelper:
         numStableBins = len(stableBins)
         stable_duration_score = numStableBins * binwidth # total stable duration
 
+        activeBins = []
+        for idx, val in enumerate(meanSmoothRate):
+            if val >= PAROXYSM_THRESH:
+                activeBins.append(idx)
+        numActiveBins = len(activeBins)
+
         # add information about sum square rates
         maxPossibleSpiking = PAROXYSM_THRESH * PAROXYSM_THRESH * numStableBins  # get max possible sum square spiking
         totalSpiking = 0
-        for idx in stableBins:
+        for idx in activeBins:
             totalSpiking += (np.power(meanSmoothRate[idx], 2))  # sum square spiking
         rate_score = maxPossibleSpiking - totalSpiking  # reward low levels of firing spread over many bins
 

@@ -11,7 +11,7 @@ def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, ch
     N_params = oldPopulation.shape[0]
     N_objectives = scores.shape[1] # number of scores, i.e. number of objective functions (scores is flies x objectives)
 
-    numUpdatesAdjustment = N_bugs*N_bugs*1.0 / N_objectives # scaling up to the constant for expected number of updates
+    numUpdatesAdjustment = N_bugs*N_bugs*1.0 / (5*N_objectives) # scaling up to the constant for expected number of updates
 
     # init
     newPopulation = oldPopulation
@@ -51,8 +51,9 @@ def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, ch
                 #attractionTerm = beta * np.exp(-absorption * differenceSquared.T) * difference.T  # old version
                 #absorptionRescaling = 1.0 / ( (4*characteristicScales) ** 2) # we don't think this is necessary
 
-                # wait I get it now, I think we need this - but haven't tried with the benchmarking function
-                absorptionRescaling = 1.0 / (4 * characteristicScales ** 2)  # we don't think this is necessary
+                #
+                absorptionRescaling = 1.0 / (4 * characteristicScales ** 2)  # rescale the absorption exponential
+                                        # the constant term 4 is just an arbitrary choice
                 attractionTerm = beta * np.exp(-absorption * differenceSquared.T * absorptionRescaling) * difference.T
 
                 print "absorption rescaling " + str(absorptionRescaling)
