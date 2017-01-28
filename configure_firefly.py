@@ -19,10 +19,12 @@ N_params = len(PARAMS)
 N_objectives = len(OBJECTIVES)
 
 # range for [p_ei, p_ie, p_ii, w_input]
-MEANS = [0.15, 0.15, 0.2, 10] # ,-1] # for each param
-STDS = [0.1, 0.1, 0.1, 6] # ,3]
-MAXES = [0.3, 0.3, 0.5, 15] # , 5]
-MINS = [0.1, 0.1, 0.05, 4] # , -10]  # sigma must be > 0
+#MEANS = [0.15, 0.15, 0.2, 10] # ,-1] # for each param  # WARNING trying a uniform distribution instead
+#STDS = [0.1, 0.1, 0.1, 6] # ,3]
+MAXES = [0.3, 0.3, 0.5, 10] # , 5]
+MINS = [0.1, 0.1, 0.05, 2] # , -10]  # sigma must be > 0
+
+
 
 
 characteristic_scales = np.zeros((N_params,)) # note this gets saved as a list (for serialization)
@@ -60,7 +62,8 @@ annealing_constant = 0.999 # currently only beta is being annealed
 
 # repackage the config constants into a dictionary
 config_dict = {"N_gen":N_gen,"N_bugs":N_bugs,"N_params":N_params,"N_objectives":N_objectives,
-               "MEANS":MEANS,"STDS":STDS,"MAXES":MAXES,"MINS":MINS,"characteristic_scales": characteristic_scales.tolist(),
+               #"MEANS":MEANS,"STDS":STDS,
+               "MAXES":MAXES,"MINS":MINS,"characteristic_scales": characteristic_scales.tolist(),
                "alpha":alpha,"beta":beta,"absorption":absorption,"annealing_constant":annealing_constant,
                "verbose":verbose,"PARAMS":PARAMS,"OBJECTIVES":OBJECTIVES,"config_prefix":config_prefix}
 

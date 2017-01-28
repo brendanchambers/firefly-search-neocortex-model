@@ -115,7 +115,7 @@ class NetworkHelper:
 
             if i_blocks == total_blocks - 1:
                 steps_remaining = total_steps - cur_step + 1
-                # print np.shape(np.random.normal(input_mean, input_sigma, (steps_remaining, self.N)))
+                # print np.shape(np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))) n
                 # print np.shape(cell_inputs[cur_step:][:self.N])
                 if steps_remaining < num_input_steps:
                     NetworkHelper.cell_inputs[cur_step:][:] = np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))
@@ -133,6 +133,13 @@ class NetworkHelper:
                 cur_step += steps_per_block
 
         NetworkHelper.cell_inputs[:, self.N_e:] = 0  # set inhibitory inputs to zero
+
+        # input fraction - portion of exc cells to receive input
+        INPUT_FRACTION = 0.1
+        for i_exc in range(self.N_e):
+            if np.random.rand() >= INPUT_FRACTION:
+                NetworkHelper.cell_inputs[:,i_exc] = 0  # mask out some of the inputs
+
 
 
     #@profile
@@ -366,7 +373,7 @@ class NetworkHelper:
 
         IGNITION_THRESH = 0.5  # avg firing rate (Hz) among active cells -> to count as an ignition
         QUENCH_THRESH = 0.5
-        PAROXYSM_THRESH = 15 # maximum allowed rate
+        PAROXYSM_THRESH = 10 # maximum allowed rate
                     #   note triple check that these are normalized correctly with the smoothing kernel
 
         '''

@@ -83,7 +83,7 @@ for i_obj in range(0,N_objectives):
 # plot some of the progression (2D cut)
 if verboseplot:
 
-    num_flies_to_plot = 2
+    num_flies_to_plot = 1
 
     plt.figure(0)
     for i_fly in range(num_flies_to_plot):  # todo select indices randomly
