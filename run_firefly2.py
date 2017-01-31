@@ -82,45 +82,32 @@ def run_firefly2():
 
         print 'generation: ' , i_gen
 
-        # todo  handle meta-heuristics
+        # handle meta-heuristics (right now we are just annealing beta)
         beta *= annealing_constant
-        for i_fly in range(0, N_bugs): # todo better to enumerate the firebugs directly
-            scoreVectors[i_fly,:] = network_helper.simulateActivity(population[:,i_fly],verboseplot=False)
-            #scoreVectors[i_fly, 1] = rosenbrock_obj(population[:, i_fly]) # temp just use the same obj for both
+        # print "annealing constant: " + str(annealing_constant)
+        # print "beta updated: " + str(beta)
 
-            # NOTE could pick off bad fireflies at this point...but things seem to be working well enough so far without culling
-            paretoIDs = []
-            cullIDs = []
-            for i_score in range(np.shape(scoreVectors)[1]):
-                scores = scoreVectors[:, i_score]
-                bestScore = np.nanargmax(scores)
-                worstScore = np.nanargmin(
-                    scores)  # so if every entry is nan I think this will just choose one arbitrarily
-                paretoIDs.append(bestScore)
-                cullIDs.append(
-                    worstScore)  # randomly respawn bad flies - NOTE would be better to introduce some stochasticity here
+        for i_fly in range(0, N_bugs):  # old note: better to enumerate the firebugs directly
+            scoreVectors[i_fly, :] = network_helper.simulateActivity(population[:, i_fly], verboseplot=False)
+            # scoreVectors[i_fly, 1] = rosenbrock_obj(population[:, i_fly]) # temp just use the same obj for both
 
-            # remove cullIDs unless they happen to be part of a pareto optimum for a different score-dimension
-            for cullIdx in cullIDs:
-                if ~(cullIdx in paretoIDs):  # if it happens to be part of the pareto front then leave it
-                    # randomly respawn these bad flies
-                    for i_param in range(N_params):
-                        population[i_param, cullIdx] = np.random.rand()
-                        population[i_param, cullIdx] *= (MAXES[i_param] - MINS[i_param])
-                        population[i_param, cullIdx] += MINS[i_param]
+        result = firefly_dynamics_rescaled(population, scoreVectors, alpha, beta, absorption, characteristic_scales,
+                                           # todo could remove characteristic scales
+                                           MAXES, MINS)
+        print 'pareto IDs : ' + str(result['paretoIDs'])
+        print 'cull IDs : ' + str(result['cullIDs'])
 
-            # keep track of progress for plotting etc
-            for i_fly in range(0, N_bugs):
-                oneGen[i_fly] = {'noise': np.copy(noiseTerms[i_fly, :]).tolist(),
-                                 'attraction': np.copy(attractionTerms[i_fly, :]).tolist(),
-                                 'alpha': alpha, 'beta': beta, 'absorption': absorption,
-                                 'score': np.copy(scoreVectors[i_fly, :]).tolist(),
-                                 'params': np.copy(population[:, i_fly]).tolist(),
-                                 'gen': i_gen, 'fly': i_fly, 'paretoIDs': paretoIDs, 'cullIDs': cullIDs}
-                # NOTE could maybe improve efficiency here...do we need to copy?
+        # keep track of progress for plotting etc
+        for i_fly in range(0, N_bugs):
+            oneGen[i_fly] = {'noise': np.copy(noiseTerms[i_fly, :]).tolist(),
+                             'attraction': np.copy(attractionTerms[i_fly, :]).tolist(),
+                             'alpha': alpha, 'beta': beta, 'absorption': absorption,
+                             'score': np.copy(scoreVectors[i_fly, :]).tolist(),
+                             'params': np.copy(population[:, i_fly]).tolist(),
+                             'gen': i_gen, 'fly': i_fly}  # ,'paretoIDs':paretoIDs,'cullIDs':cullIDs}
+            # NOTE could maybe improve efficiency here...do we need to copy?
 
         # scale alpha and ?absorption?
-        result = firefly_dynamics_rescaled(population, scoreVectors, alpha, beta, absorption, characteristic_scales)
         newPopulation = result['newPopulation']
         attractionTerms = result['attractionTerms']
         noiseTerms = result['noiseTerms']

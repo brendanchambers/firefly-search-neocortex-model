@@ -3,7 +3,7 @@ import scipy as sp
 
 from memory_profiler import profile
 
-def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, characteristicScales):
+def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, characteristicScales, MAXES, MINS):
 
     # NOTE this implementation assumes this is a maximization problem
 
@@ -19,7 +19,7 @@ def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, ch
     attractionTerms = np.zeros((N_bugs,N_params))
     dominatedByOthers = np.zeros((N_bugs,1))
 
-    updateCounts = np.zeros((N_bugs,N_bugs)) # i,j  means j dominated i
+    #updateCounts = np.zeros((N_bugs,N_bugs)) # i,j  means j dominated i
 
     for i_fly in range(0,N_bugs):
         for i_score in range(0,N_objectives):
@@ -73,9 +73,55 @@ def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, ch
         noiseTerms[i_fly,:] = noiseTerms[i_fly,:] # * 1.0 / numUpdatesAdjustment # scaling
         newPopulation[:, i_fly] += (attractionTerms[i_fly,:].T + noiseTerms[i_fly,:].T)
 
-    # todo maybe explicitly return the pareto front using dominatedByOthers==0
+    # grab the pareto front
+    paretoIDs = [idx for idx, val in enumerate(dominatedByOthers) if val==0]
 
-    return {'newPopulation':newPopulation,'attractionTerms':attractionTerms,'noiseTerms':noiseTerms,'dominatedByOthers':dominatedByOthers} # ,'updateCounts':updateCounts}
+    # check for all scores == 0
+    if (dominatedByOthers==0).all():
+
+        # if all scores are identical, still take a noise step for each fly
+        alphaRescaling = characteristicScales
+        noiseTerm = alpha * sp.randn(N_bugs,N_params) * alphaRescaling
+        newPopulation += noiseTerms.T
+
+        # and respawn some flies randomly
+        NUM_SPAWN = sp.round(1.0*N_bugs / 10.0) # respawn 10% of flies
+        cullIDs = sp.random.randint(0,N_bugs,NUM_SPAWN)
+
+        # remove cullIDs unless they happen to be part of a pareto optimum for a different score-dimension
+        for cullIdx in cullIDs:
+            # randomly respawn these bad flies t
+            for i_param in range(N_params):
+                newPopulation[i_param, cullIdx] = np.random.rand()
+                newPopulation[i_param, cullIdx] *= (MAXES[i_param] - MINS[i_param])
+                newPopulation[i_param, cullIdx] += MINS[i_param]
+
+    else: # else not all score vectors are identical
+
+        # get the worst flies and respawn them
+        # NOTE could pick off bad fireflies at this point...but things seem to be working well enough so far without culling
+                # todo do this with max(dominatedByOthers) instead of looping through everything again
+        #paretoIDs = []
+        cullIDs = []
+        for i_score in range(np.shape(scores)[1]):
+            scores1D = scores[:, i_score]
+            bestScore = np.nanargmax(scores1D)
+            worstScore = np.nanargmin(scores1D)  # so if every entry is nan I think this will just choose one arbitrarily
+            #paretoIDs.append(bestScore)
+            cullIDs.append(worstScore)  # randomly respawn bad flies - NOTE would be better to introduce some stochasticity here
+             # handle the case where all scores == 0
+
+        # remove cullIDs unless they happen to be part of a pareto optimum for a different score-dimension
+        for cullIdx in cullIDs:
+            if ~(cullIdx in paretoIDs):  # if it happens to be part of the pareto front then leave it
+                # randomly respawn these bad flies t
+                for i_param in range(N_params):
+                    newPopulation[i_param, cullIdx] = np.random.rand()
+                    newPopulation[i_param, cullIdx] *= (MAXES[i_param] - MINS[i_param])
+                    newPopulation[i_param, cullIdx] += MINS[i_param]
+
+    return {'newPopulation':newPopulation,'attractionTerms':attractionTerms,'noiseTerms':noiseTerms,
+            'dominatedByOthers':dominatedByOthers,'cullIDs':cullIDs,'paretoIDs':paretoIDs} # ,'updateCounts':updateCounts}
 
 
 ######## test for the function ###########
