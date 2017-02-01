@@ -98,6 +98,23 @@ def run_firefly1():
 
         result = firefly_dynamics_rescaled(population, scoreVectors, alpha, beta, absorption, characteristic_scales,  # todo could remove characteristic scales
                                                MAXES, MINS)
+
+        newPopulation = result['newPopulation']
+        attractionTerms = result['attractionTerms']
+        noiseTerms = result['noiseTerms']
+        population = newPopulation
+
+        # check bounds on parameter values
+        for i_param in range(N_params):
+            for i_fly in range(N_bugs):
+                if population[i_param,i_fly] < MINS[i_param]:
+                    population[i_param,i_fly] = MINS[i_param]
+                if population[i_param,i_fly] > MAXES[i_param]:
+                    population[i_param,i_fly] = MAXES[i_param]
+
+
+
+
         print 'pareto IDs : ' + str(result['paretoIDs'])
         print 'cull IDs : ' + str(result['cullIDs'])
 
@@ -110,11 +127,6 @@ def run_firefly1():
                                             # NOTE could maybe improve efficiency here...do we need to copy?
 
 
-        newPopulation = result['newPopulation']
-        attractionTerms = result['attractionTerms']
-        noiseTerms = result['noiseTerms']
-        population = newPopulation
-
         # temporary: look at updateCounts
         #plt.figure()
         #plt.hist(result['dominatedByOthers'])
@@ -122,13 +134,6 @@ def run_firefly1():
         #plt.title('update counts')
         #plt.show()
 
-        # check bounds on parameter values
-        for i_param in range(N_params):
-            for i_fly in range(N_bugs):
-                if population[i_param,i_fly] < MINS[i_param]:
-                    population[i_param,i_fly] = MINS[i_param]
-                if population[i_param,i_fly] > MAXES[i_param]:
-                    population[i_param,i_fly] = MAXES[i_param]
 
         json.dump(oneGen, resultsFile, sort_keys=True, indent=2)
         if i_gen < (N_gen - 1):

@@ -13,7 +13,7 @@ PARAMS = ['p_ei','p_ie','p_ii','w_input'] # ,'lognorm_sigma'] # name for easier 
 OBJECTIVES = ['stable duration','rate_score','asynchrony_score'] # '['asynchrony','stable duration'] # names for easier printing & reference
                     # (for now the second obj dimension is not necessary)
 
-N_gen = 5  # working towards 100+
+N_gen = 35  # working towards 100+
 N_bugs = 30
 N_params = len(PARAMS)
 N_objectives = len(OBJECTIVES)
