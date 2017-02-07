@@ -85,7 +85,7 @@ def firefly_dynamics_rescaled(oldPopulation, scores, alpha, beta, absorption, ch
         newPopulation += noiseTerms.T
 
         # and respawn some flies randomly
-        NUM_SPAWN = sp.round(1.0*N_bugs / 10.0) # respawn 10% of flies
+        NUM_SPAWN = int(round(1.0*N_bugs / 10.0)) # respawn 10% of flies
         cullIDs = sp.random.randint(0,N_bugs,NUM_SPAWN)
 
         # remove cullIDs unless they happen to be part of a pareto optimum for a different score-dimension

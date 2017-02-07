@@ -100,6 +100,20 @@ class NetworkHelper:
         self.eqs = Equations(str(network_config['eqs'])) # dynamics of the model
 
     def initializeInputs(self):
+
+        input_filestring = "input_currents 2-3-2017.json" # todo put this constant in an more appropriate location
+
+        input_file = open(input_filestring, 'r')
+        with input_file as data_file:
+            input_info = json.load(data_file)
+        input_file.close()
+        input_currents = np.asarray(input_info['input_currents'])
+        N_targets = input_info['N_targets']
+
+
+        # these inputs are really unrealistic - let's do something that looks more like these: http://science.sciencemag.org/content/312/5780/1622.full
+
+
         block_duration = 150 * ms
         input_duration = 50 * ms
         input_mean = 1  # e-9 # scale from siemens to nS
@@ -118,27 +132,37 @@ class NetworkHelper:
                 # print np.shape(np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))) n
                 # print np.shape(cell_inputs[cur_step:][:self.N])
                 if steps_remaining < num_input_steps:
-                    NetworkHelper.cell_inputs[cur_step:][:] = np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))
+                    NetworkHelper.cell_inputs[cur_step:,:N_targets] = input_currents[:][:steps_remaining].T  # todo generate random indices for the targets
+                    #NetworkHelper.cell_inputs[cur_step:][:] = np.random.normal(input_mean, input_sigma, (steps_remaining, self.N))
                 else:
-                    NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
-                                                                                             (num_input_steps, self.N))
+                    NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps),:N_targets] = input_currents.T
+                    #NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
+                    #                                                                         (num_input_steps, self.N))
             else:
 
                 # print num_input_steps
                 # print self.N_e
                 # print np.shape(np.random.normal(input_mean, input_sigma, (num_input_steps, self.N)))
                 # print np.shape(cell_inputs[cur_step:][:])
-                NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
-                                                                                         (num_input_steps, self.N))
+                NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps),:N_targets] = input_currents.T
+
+                #NetworkHelper.cell_inputs[cur_step:(cur_step + num_input_steps)][:] = np.random.normal(input_mean, input_sigma,
+                #                                                                         (num_input_steps, self.N))
                 cur_step += steps_per_block
 
-        NetworkHelper.cell_inputs[:, self.N_e:] = 0  # set inhibitory inputs to zero
+        NetworkHelper.cell_inputs[:, self.N_e:] = 0  # set inhibitory inputs to zero # todo don't need this now
 
         # input fraction - portion of exc cells to receive input
-        INPUT_FRACTION = 0.1
+        INPUT_FRACTION = 1.1 #  todo this is now in the cell inputs0.1
         for i_exc in range(self.N_e):
             if np.random.rand() >= INPUT_FRACTION:
                 NetworkHelper.cell_inputs[:,i_exc] = 0  # mask out some of the inputs
+
+        #print np.shape(NetworkHelper.cell_inputs)
+        #plt.figure()
+        #plt.imshow(NetworkHelper.cell_inputs[:,:321],aspect='auto')
+        #plt.title('cell inputs')
+        #plt.show()
 
 
 
@@ -259,7 +283,8 @@ class NetworkHelper:
 
         ###### recording activity
         s_mon = SpikeMonitor(neurons)  # keep track of population firing
-        P_patch = neurons[(self.N_e - 1):(self.N_e + 1)]  # random exc and inh cell #todo chose these randomly
+        #P_patch = neurons[(self.N_e - 1):(self.N_e + 1)]  # random exc and inh cell #todo chose these randomly
+        P_patch = neurons[0:2] # todo # go back to patching an inhibitory neuron too
         dt_patch = 0.1 * ms  # 1/sampling frequency  in ms
         patch_monitor = StateMonitor(P_patch, variables=('vm', 'gE', 'gI', 'w', 'g_input'), record=True,
                                      dt=dt_patch)  # keep track of a few cells

@@ -13,7 +13,7 @@ PARAMS = ['p_ei','p_ie','p_ii','w_input'] # ,'lognorm_sigma'] # name for easier 
 OBJECTIVES = ['stable duration','rate_score','asynchrony_score'] # '['asynchrony','stable duration'] # names for easier printing & reference
                     # (for now the second obj dimension is not necessary)
 
-N_gen = 35  # working towards 100+
+N_gen = 20  # working towards 100+
 N_bugs = 30
 N_params = len(PARAMS)
 N_objectives = len(OBJECTIVES)
@@ -21,8 +21,8 @@ N_objectives = len(OBJECTIVES)
 # range for [p_ei, p_ie, p_ii, w_input]
 #MEANS = [0.15, 0.15, 0.2, 10] # ,-1] # for each param  # WARNING trying a uniform distribution instead
 #STDS = [0.1, 0.1, 0.1, 6] # ,3]
-MAXES = [0.5, 0.5, 0.5, 15] # , 5]
-MINS = [0.05, 0.05, 0.05, 2] # , -10]  # sigma must be > 0
+MAXES = [0.35, 0.35, 0.35, 8] # 13] # , 5]
+MINS = [0.1, 0.1, 0.1, 2.5] # 3] # , -10]  # sigma must be > 0
 
 
 
